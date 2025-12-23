@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>MISS SHIBA Café</title>
+    <title>MISS SHIBA Café Pro</title>
     <style>
         :root {
             --bg-color: #f8f4f0;
@@ -14,63 +14,82 @@
             --status-warn: #fff9c4;
             --status-urgent: #ffccbc;
             --status-over: #ef9a9a;
-            --status-swap: #2196f3; 
+            --status-swap-active: #2196f3; 
         }
         body { font-family: -apple-system, sans-serif; background-color: var(--bg-color); margin: 0; overflow: hidden; touch-action: none; }
-        #header { background: var(--primary-brown); color: white; padding: 10px 15px; z-index: 100; position: relative; }
+        
+        /* 頂部資訊欄 */
+        #header { background: var(--primary-brown); color: white; padding: 10px 15px; z-index: 1000; position: relative; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
         .header-top { display: flex; justify-content: space-between; align-items: center; }
         .stats-bar { font-size: 0.9rem; margin-top: 5px; color: #d7ccc8; border-top: 1px solid #795548; padding-top: 5px; }
-        #controls { padding: 8px 15px; background: #efebe9; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-size: 13px; }
-        #floor-plan-container { width: 100vw; height: calc(100vh - 160px); overflow: auto; background-image: radial-gradient(#d1cfc7 1px, transparent 1px); background-size: 20px 20px; }
+        
+        /* 控制欄 */
+        #controls { padding: 8px 15px; background: #efebe9; display: flex; flex-wrap: wrap; gap: 15px; align-items: center; font-size: 14px; border-bottom: 1px solid #d7ccc8; }
+        
+        /* 畫布區域 */
+        #floor-plan-container { width: 100vw; height: calc(100vh - 160px); overflow: auto; background-color: #eee; background-image: radial-gradient(#d1cfc7 1px, transparent 1px); background-size: 20px 20px; }
         #floor-plan { position: relative; width: 2000px; height: 2000px; transform-origin: 0 0; }
         
-        .table { position: absolute; background: var(--table-free); border: 2px solid #8d6e63; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 10; min-width: 80px; min-height: 80px; }
+        /* 桌子本體 */
+        .table { 
+            position: absolute; background: var(--table-free); 
+            border: 3px solid #8d6e63; border-radius: 12px; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15); z-index: 10; 
+            min-width: 100px; min-height: 100px; transition: transform 0.1s;
+        }
         .occupied { background: var(--status-ok); border-color: #4caf50; }
         .warn { background: var(--status-warn); border-color: #fbc02d; }
         .urgent { background: var(--status-urgent); border-color: #ff5722; }
         .over { background: var(--status-over); border-color: #d32f2f; animation: pulse 1s infinite; }
         
-        /* 選中換桌時的動畫 */
-        .swap-pending { 
-            outline: 4px solid var(--status-swap) !important; 
-            outline-offset: 2px;
-            animation: swap-blink 0.8s infinite;
-            z-index: 50 !important;
+        /* 換桌中選取效果 */
+        .swap-source { 
+            outline: 6px solid var(--status-swap-active) !important; 
+            outline-offset: 4px;
+            animation: swap-blink 0.6s infinite;
+            z-index: 100 !important;
         }
-        @keyframes swap-blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        @keyframes swap-blink { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+
+        /* 文字與計時 */
+        .table-id { font-weight: bold; font-size: 1.2rem; border: none; background: transparent; text-align: center; width: 90%; color: #3e2723; pointer-events: none; margin-bottom: 2px; }
+        .timer { font-family: 'Courier New', monospace; font-size: 1.3rem; font-weight: bold; margin-bottom: 8px; pointer-events: none; }
         
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0px rgba(211, 47, 47, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(211, 47, 47, 0); } 100% { box-shadow: 0 0 0 0px rgba(211, 47, 47, 0); } }
-        
-        .table-id { font-weight: bold; font-size: 1rem; border: none; background: transparent; text-align: center; width: 80%; color: #5d4037; pointer-events: none; }
-        .edit-mode .table-id { pointer-events: auto; background: rgba(255,255,255,0.5); }
-        .timer { font-family: monospace; font-size: 1.1rem; font-weight: bold; margin: 2px 0; pointer-events: none; }
-        
-        .btn-group { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3px; width: 92%; }
-        button { padding: 5px; border-radius: 4px; border: none; cursor: pointer; font-size: 11px; }
-        .btn-start { background: #4caf50; color: white; grid-column: span 3; margin-bottom: 2px; }
+        /* 按鈕組：加大間距與尺寸 */
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; width: 90%; }
+        button { padding: 8px 4px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn-start { background: #4caf50; color: white; grid-column: span 2; font-size: 15px; padding: 10px; }
         .btn-plus { background: #ff9800; color: white; }
-        .btn-swap { background: #2196f3; color: white; font-weight: bold; border: 1px solid rgba(0,0,0,0.1); }
-        .btn-reset { background: #757575; color: white; }
+        .btn-swap { background: #2196f3; color: white; }
+        .btn-reset { background: #757575; color: white; grid-column: span 2; margin-top: 4px; }
         
-        .resizer { position: absolute; bottom: 0; right: 0; width: 15px; height: 15px; background: #8d6e63; cursor: nwse-resize; display: none; }
+        /* 編輯模式 */
+        .resizer { position: absolute; bottom: 0; right: 0; width: 24px; height: 24px; background: #8d6e63; cursor: nwse-resize; border-radius: 0 0 10px 0; display: none; }
         .edit-mode .resizer { display: block; }
-        .btn-delete { position: absolute; top: -10px; right: -10px; background: #ff5252; color: white; border-radius: 50%; width: 20px; height: 20px; display: none; z-index: 20; }
+        .btn-delete { position: absolute; top: -12px; right: -12px; background: #f44336; color: white; border-radius: 50%; width: 28px; height: 28px; display: none; z-index: 100; font-size: 20px; line-height: 28px; border: 2px solid white; }
         .edit-mode .btn-delete { display: block; }
+        .edit-mode .table-id { pointer-events: auto; background: rgba(255,255,255,0.7); border-bottom: 1px dashed #8d6e63; }
     </style>
 </head>
 <body>
 
 <div id="header">
     <div class="header-top">
-        <div style="font-size: 1.2rem; font-weight: bold;">🐶 MISS SHIBA Café</div>
-        <button id="add-btn" style="background:#fff; color:var(--primary-brown); font-weight:bold; display:none;" onclick="createNewTable()">＋桌位</button>
+        <div style="font-size: 1.4rem; font-weight: bold;">🐶 MISS SHIBA Café</div>
+        <button id="add-btn" style="background:#fff; color:var(--primary-brown); font-weight:bold; display:none; padding: 8px 15px;" onclick="createNewTable()">＋新增桌位</button>
     </div>
     <div class="stats-bar" id="stats-display">統計中...</div>
 </div>
 
 <div id="controls">
-    <label><input type="checkbox" id="lock-toggle" onchange="toggleLock()"> 🔧編輯模式</label>
-    <span>🔎 <input type="range" min="0.5" max="1.5" step="0.1" value="1" oninput="adjustZoom(this.value)"></span>
+    <label style="display:flex; align-items:center; gap:8px; font-weight:bold;">
+        <input type="checkbox" id="lock-toggle" style="width:20px; height:20px;" onchange="toggleLock()"> 🔧編輯模式
+    </label>
+    <div style="display:flex; align-items:center; gap:10px;">
+        🔎 <input type="range" min="0.5" max="1.5" step="0.1" value="1" style="width:120px;" oninput="adjustZoom(this.value)">
+    </div>
+    <div id="swap-msg" style="color:#2196f3; font-weight:bold; display:none;">請點擊目標桌子...</div>
 </div>
 
 <div id="floor-plan-container">
@@ -82,11 +101,11 @@
     let isEditMode = false;
     let zoomScale = 1;
     let swapSourceId = null;
-    let tablesData = JSON.parse(localStorage.getItem('shibaTablesV6')) || [];
+    let tablesData = JSON.parse(localStorage.getItem('shibaTablesV7')) || [];
 
     window.onload = () => {
         if (tablesData.length === 0) {
-            for(let i=1; i<=8; i++) createNewTable(30 + (i-1)*130, 50, `${i}`);
+            for(let i=1; i<=8; i++) createNewTable(50 + (i-1)*150, 50, `${i}`);
         } else {
             tablesData.forEach(data => renderTable(data));
         }
@@ -114,12 +133,12 @@
             extraTime: parseInt(t.dataset.extraTime) || 0,
             isOccupied: t.classList.contains('occupied')
         }));
-        localStorage.setItem('shibaTablesV6', JSON.stringify(data));
+        localStorage.setItem('shibaTablesV7', JSON.stringify(data));
         updateStats();
     }
 
     function createNewTable(left = 100, top = 100, name = "新") {
-        const data = { id: 't-' + Date.now(), name, left: left + 'px', top: top + 'px', width: '120px', height: '120px', startTime: null, extraTime: 0, isOccupied: false };
+        const data = { id: 't-' + Date.now(), name, left: left + 'px', top: top + 'px', width: '130px', height: '140px', startTime: null, extraTime: 0, isOccupied: false };
         renderTable(data);
         saveToLocal();
     }
@@ -134,15 +153,22 @@
         table.dataset.startTime = data.startTime || "";
         table.dataset.extraTime = data.extraTime || 0;
 
+        // 點擊整張桌子也能觸發換桌，但必須在換桌模式啟動後
+        table.onclick = (e) => {
+            if (swapSourceId && e.target.className.includes('table')) {
+                executeSwap(data.id);
+            }
+        };
+
         table.innerHTML = `
-            <button class="btn-delete" onclick="deleteTable('${data.id}')">×</button>
+            <button class="btn-delete" onclick="deleteTable(event, '${data.id}')">×</button>
             <input class="table-id" value="${data.name}" onchange="saveToLocal()" readonly>
             <div class="timer">--:--</div>
             <div class="btn-group">
-                <button class="btn-start" onclick="startTimer('${data.id}')" ${data.isOccupied ? 'disabled' : ''}>開桌</button>
-                <button class="btn-plus" onclick="addTime('${data.id}')">+15</button>
-                <button class="btn-swap" onclick="handleSwap(event, '${data.id}')">換桌</button>
-                <button class="btn-reset" onclick="resetTable('${data.id}')">結帳</button>
+                <button class="btn-start" onclick="startTimer(event, '${data.id}')" ${data.isOccupied ? 'disabled' : ''}>開桌</button>
+                <button class="btn-plus" onclick="addTime(event, '${data.id}')">+15m</button>
+                <button class="btn-swap" onclick="initiateSwap(event, '${data.id}')">換桌</button>
+                <button class="btn-reset" onclick="resetTable(event, '${data.id}')">結帳</button>
             </div>
             <div class="resizer"></div>
         `;
@@ -150,56 +176,57 @@
         floor.appendChild(table);
     }
 
-    function handleSwap(e, id) {
-        e.stopPropagation(); // 防止點擊按鈕觸發桌子拖拽
-        const targetEl = document.getElementById(id);
-
-        if (!swapSourceId) {
-            // 第一階段：選中來源
-            swapSourceId = id;
-            targetEl.classList.add('swap-pending');
-        } else if (swapSourceId === id) {
-            // 取消選中
-            targetEl.classList.remove('swap-pending');
-            swapSourceId = null;
-        } else {
-            // 第二階段：執行對調
-            const srcEl = document.getElementById(swapSourceId);
-            
-            // 互換數據
-            const tempStart = srcEl.dataset.startTime;
-            const tempExtra = srcEl.dataset.extraTime;
-            const tempOccupied = srcEl.classList.contains('occupied');
-
-            // 將目標桌的資料給來源桌
-            srcEl.dataset.startTime = targetEl.dataset.startTime;
-            srcEl.dataset.extraTime = targetEl.dataset.extraTime;
-            if (targetEl.classList.contains('occupied')) {
-                srcEl.classList.add('occupied');
-            } else {
-                srcEl.classList.remove('occupied', 'warn', 'urgent', 'over');
-            }
-            srcEl.querySelector('.btn-start').disabled = srcEl.classList.contains('occupied');
-
-            // 將來源桌資料給目標桌
-            targetEl.dataset.startTime = tempStart;
-            targetEl.dataset.extraTime = tempExtra;
-            if (tempOccupied) {
-                targetEl.classList.add('occupied');
-            } else {
-                targetEl.classList.remove('occupied', 'warn', 'urgent', 'over');
-            }
-            targetEl.querySelector('.btn-start').disabled = targetEl.classList.contains('occupied');
-
-            // 重置狀態
-            srcEl.classList.remove('swap-pending');
-            swapSourceId = null;
-            saveToLocal();
-            alert("換桌成功！");
+    // 發起換桌
+    function initiateSwap(e, id) {
+        e.stopPropagation();
+        if (swapSourceId) {
+            // 如果點了第二張桌子的換桌鈕，一樣執行對調
+            if (swapSourceId !== id) executeSwap(id);
+            else cancelSwap();
+            return;
         }
+        swapSourceId = id;
+        document.getElementById(id).classList.add('swap-source');
+        document.getElementById('swap-msg').style.display = 'block';
     }
 
-    function startTimer(id) {
+    // 取消換桌
+    function cancelSwap() {
+        if (swapSourceId) document.getElementById(swapSourceId).classList.remove('swap-source');
+        swapSourceId = null;
+        document.getElementById('swap-msg').style.display = 'none';
+    }
+
+    // 執行對調
+    function executeSwap(targetId) {
+        const srcEl = document.getElementById(swapSourceId);
+        const targetEl = document.getElementById(targetId);
+
+        // 數據互換邏輯
+        const tempStart = srcEl.dataset.startTime;
+        const tempExtra = srcEl.dataset.extraTime;
+        const tempOccupied = srcEl.classList.contains('occupied');
+
+        // 目標資料移至來源
+        srcEl.dataset.startTime = targetEl.dataset.startTime;
+        srcEl.dataset.extraTime = targetEl.dataset.extraTime;
+        if (targetEl.classList.contains('occupied')) srcEl.classList.add('occupied'); 
+        else srcEl.classList.remove('occupied', 'warn', 'urgent', 'over');
+        srcEl.querySelector('.btn-start').disabled = srcEl.classList.contains('occupied');
+
+        // 來源資料移至目標
+        targetEl.dataset.startTime = tempStart;
+        targetEl.dataset.extraTime = tempExtra;
+        if (tempOccupied) targetEl.classList.add('occupied'); 
+        else targetEl.classList.remove('occupied', 'warn', 'urgent', 'over');
+        targetEl.querySelector('.btn-start').disabled = targetEl.classList.contains('occupied');
+
+        cancelSwap();
+        saveToLocal();
+    }
+
+    function startTimer(e, id) {
+        e.stopPropagation();
         const el = document.getElementById(id);
         el.dataset.startTime = Date.now();
         el.classList.add('occupied');
@@ -207,25 +234,28 @@
         saveToLocal();
     }
 
-    function addTime(id) {
+    function addTime(e, id) {
+        e.stopPropagation();
         const el = document.getElementById(id);
         if (!el.classList.contains('occupied')) return;
         el.dataset.extraTime = (parseInt(el.dataset.extraTime) || 0) + 900;
         saveToLocal();
     }
 
-    function resetTable(id) {
-        if (!confirm("確定結帳？")) return;
+    function resetTable(e, id) {
+        e.stopPropagation();
+        if (!confirm("確定結帳並清空？")) return;
         const el = document.getElementById(id);
-        el.classList.remove('occupied', 'warn', 'urgent', 'over', 'swap-pending');
+        el.classList.remove('occupied', 'warn', 'urgent', 'over', 'swap-source');
         el.dataset.startTime = ""; el.dataset.extraTime = 0;
         el.querySelector('.timer').innerText = "--:--";
         el.querySelector('.btn-start').disabled = false;
-        if(swapSourceId === id) swapSourceId = null;
+        if(swapSourceId === id) cancelSwap();
         saveToLocal();
     }
 
-    function deleteTable(id) {
+    function deleteTable(e, id) {
+        e.stopPropagation();
         if (confirm("刪除此桌位？")) { document.getElementById(id).remove(); saveToLocal(); }
     }
 
@@ -237,14 +267,11 @@
 
     function updateAllTimers() {
         document.querySelectorAll('.table.occupied').forEach(el => {
+            if (el.id === swapSourceId) return; // 換桌中暫停顏色跳動以免視覺干擾
             const start = parseInt(el.dataset.startTime);
             const extra = parseInt(el.dataset.extraTime) || 0;
             const timeLeft = (DEFAULT_DURATION + extra) - Math.floor((Date.now() - start) / 1000);
             const timerDisplay = el.querySelector('.timer');
-            
-            // 只有正在換桌的那張桌子不要頻繁閃爍，保持藍色
-            if (el.id === swapSourceId) return;
-
             el.classList.remove('warn', 'urgent', 'over');
             if (timeLeft <= 0) {
                 timerDisplay.innerText = "超時"; el.classList.add('over');
@@ -261,7 +288,7 @@
         let isDragging = false, isResizing = false;
         let startX, startY, startW, startH, offset = { x: 0, y: 0 };
         el.addEventListener('mousedown', start);
-        el.addEventListener('touchstart', start);
+        el.addEventListener('touchstart', start, {passive: false});
         function start(e) {
             const t = e.type.includes('touch') ? e.touches[0] : e;
             if (e.target.className === 'resizer') {
@@ -272,7 +299,7 @@
                 isDragging = true;
                 offset.x = (t.clientX / zoomScale) - el.offsetLeft;
                 offset.y = (t.clientY / zoomScale) - el.offsetTop;
-                el.style.zIndex = 100;
+                el.style.zIndex = 1000;
             }
         }
         document.addEventListener('mousemove', move);
@@ -287,11 +314,12 @@
                 let ny = (t.clientY / zoomScale) - offset.y;
                 el.style.left = 20 * Math.round(nx / 20) + 'px';
                 el.style.top = 20 * Math.round(ny / 20) + 'px';
+                e.preventDefault();
             }
         }
         document.addEventListener('mouseup', end);
         document.addEventListener('touchend', end);
-        function end() { if (isDragging || isResizing) { isDragging = false; isResizing = false; saveToLocal(); } }
+        function end() { if (isDragging || isResizing) { isDragging = false; isResizing = false; el.style.zIndex = 10; saveToLocal(); } }
     }
 </script>
 </body>
