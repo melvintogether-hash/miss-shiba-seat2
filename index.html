@@ -3,17 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>咖啡廳管理系統 Pro</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>MISS SHIBA Café</title>
     <style>
         :root {
-            --bg-color: #f4f1ea;
+            --bg-color: #f8f4f0;
+            --primary-brown: #5d4037;
             --table-free: #ffffff;
-            --table-busy: #e8f5e9;
-            --table-alert: #ffebee;
-            --primary-brown: #6f4e37;
+            --status-ok: #e8f5e9;
+            --status-warn: #fff9c4;   /* 15分 黃色 */
+            --status-urgent: #ffccbc; /* 5分 淺紅 */
+            --status-over: #ef9a9a;   /* 超時 深紅 */
         }
         body {
-            font-family: -apple-system, "Microsoft JhengHei", sans-serif;
+            font-family: -apple-system, "Segoe UI", sans-serif;
             background-color: var(--bg-color);
             margin: 0;
             overflow: hidden;
@@ -22,95 +25,127 @@
         #header {
             background: var(--primary-brown);
             color: white;
-            padding: 0 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            height: 60px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        #floor-plan {
-            width: 100vw;
-            height: calc(100vh - 60px);
+            padding: 10px 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            z-index: 100;
             position: relative;
+        }
+        .header-top { display: flex; justify-content: space-between; align-items: center; }
+        .stats-bar { font-size: 0.9rem; margin-top: 5px; color: #d7ccc8; border-top: 1px solid #795548; padding-top: 5px; }
+        
+        #controls {
+            padding: 8px 15px;
+            background: #efebe9;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        #floor-plan-container {
+            width: 100vw;
+            height: calc(100vh - 140px);
+            overflow: auto;
             background-image: radial-gradient(#d1cfc7 1px, transparent 1px);
             background-size: 20px 20px;
         }
+        #floor-plan { position: relative; width: 2000px; height: 2000px; transform-origin: 0 0; }
+
         .table {
             position: absolute;
             width: 130px;
             height: 130px;
             background: var(--table-free);
             border: 2px solid #8d6e63;
-            border-radius: 15px; /* 預設方桌 */
+            border-radius: 15px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            cursor: move;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-            user-select: none;
-            transition: background 0.3s, border-radius 0.3s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             z-index: 10;
         }
         .table.circle { border-radius: 50%; }
-        .table.occupied { background: var(--table-busy); border-color: #4caf50; }
-        .table.alert { 
-            background: var(--table-alert); 
-            border-color: #f44336; 
-            animation: pulse 1.5s infinite;
-        }
+        .table.is-locked { cursor: default; }
+        
+        /* 顏色狀態 */
+        .occupied { background: var(--status-ok); border-color: #4caf50; }
+        .warn { background: var(--status-warn); border-color: #fbc02d; }
+        .urgent { background: var(--status-urgent); border-color: #ff5722; }
+        .over { background: var(--status-over); border-color: #d32f2f; animation: pulse 1s infinite; }
+
         @keyframes pulse {
-            0% { box-shadow: 0 0 0 0px rgba(244, 67, 54, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(244, 67, 54, 0); }
-            100% { box-shadow: 0 0 0 0px rgba(244, 67, 54, 0); }
+            0% { box-shadow: 0 0 0 0px rgba(211, 47, 47, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(211, 47, 47, 0); }
+            100% { box-shadow: 0 0 0 0px rgba(211, 47, 47, 0); }
         }
-        .table-id { font-weight: bold; font-size: 1rem; border: none; background: transparent; text-align: center; width: 60px; color: #5d4037; }
-        .timer { font-family: 'Courier New', monospace; font-size: 1.2rem; font-weight: bold; margin: 2px 0; }
-        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 5px; }
-        button {
-            padding: 4px 8px;
-            border-radius: 4px;
-            border: none;
-            cursor: pointer;
-            font-size: 11px;
-            background: #eee;
-        }
-        .btn-start { background: #4caf50; color: white; grid-column: span 2; font-size: 13px; }
+
+        .table-id { font-weight: bold; font-size: 1.1rem; border: none; background: transparent; text-align: center; width: 70px; color: #5d4037; }
+        .timer { font-family: monospace; font-size: 1.2rem; font-weight: bold; margin: 4px 0; }
+        
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+        button { padding: 5px; border-radius: 6px; border: none; cursor: pointer; font-size: 12px; }
+        .btn-start { background: #4caf50; color: white; grid-column: span 2; }
         .btn-plus { background: #ff9800; color: white; }
         .btn-reset { background: #757575; color: white; }
-        .btn-delete { background: white; color: #ff5252; position: absolute; top: -5px; right: -5px; border: 1px solid #ff5252; border-radius: 50%; width: 22px; height: 22px; z-index: 20; }
-        .btn-shape { position: absolute; top: -5px; left: -5px; background: white; border: 1px solid #8d6e63; border-radius: 50%; width: 22px; height: 22px; font-size: 10px; padding: 0; }
-        .btn-add { background: #fff; color: var(--primary-brown); font-weight: bold; padding: 8px 15px; border-radius: 20px; }
+        .btn-delete { position: absolute; top: -8px; right: -8px; background: #ff5252; color: white; width: 24px; height: 24px; border-radius: 50%; display: none; }
+        .edit-mode .btn-delete { display: block; }
+        
+        .toggle-container { display: flex; align-items: center; gap: 5px; }
     </style>
 </head>
 <body>
 
 <div id="header">
-    <div style="font-size: 1.1rem; font-weight: bold;">☕ 店內桌位管理</div>
-    <button class="btn-add" onclick="createNewTable()">＋ 新增桌位</button>
+    <div class="header-top">
+        <div style="font-size: 1.3rem; font-weight: bold;">🐶 MISS SHIBA Café</div>
+        <button id="add-btn" style="background:#fff; color:var(--primary-brown); font-weight:bold; padding: 5px 12px; display:none;" onclick="createNewTable()">＋桌位</button>
+    </div>
+    <div class="stats-bar" id="stats-display">滿席: 0 / 空桌: 8</div>
 </div>
 
-<div id="floor-plan"></div>
+<div id="controls">
+    <div class="toggle-container">
+        <input type="checkbox" id="lock-toggle" onchange="toggleLock()"> 🔧編輯模式
+    </div>
+    <div class="toggle-container">
+        🔎 <input type="range" id="zoom-slider" min="0.5" max="1.5" step="0.1" value="1" oninput="adjustZoom(this.value)">
+    </div>
+</div>
+
+<div id="floor-plan-container">
+    <div id="floor-plan"></div>
+</div>
 
 <script>
     const DEFAULT_DURATION = 90 * 60;
-    const GRID_SIZE = 20; // 磁吸網格大小
-    let tablesData = JSON.parse(localStorage.getItem('cafeTablesV2')) || [];
+    let isEditMode = false;
+    let zoomScale = 1;
+    let tablesData = JSON.parse(localStorage.getItem('shibaTablesV3')) || [];
 
     window.onload = () => {
         if (tablesData.length === 0) {
-            createNewTable(40, 40, "A1");
-            createNewTable(200, 40, "A2");
+            for(let i=1; i<=8; i++) createNewTable(50 + (i%3)*150, 50 + Math.floor(i/3)*150, `桌 ${i}`);
         } else {
             tablesData.forEach(data => renderTable(data));
         }
         setInterval(updateAllTimers, 1000);
+        updateStats();
     };
 
+    function toggleLock() {
+        isEditMode = document.getElementById('lock-toggle').checked;
+        document.body.classList.toggle('edit-mode', isEditMode);
+        document.getElementById('add-btn').style.display = isEditMode ? 'block' : 'none';
+    }
+
+    function adjustZoom(val) {
+        zoomScale = val;
+        document.getElementById('floor-plan').style.transform = `scale(${val})`;
+    }
+
     function saveToLocal() {
-        const allTables = document.querySelectorAll('.table');
-        const dataToSave = Array.from(allTables).map(t => ({
+        const data = Array.from(document.querySelectorAll('.table')).map(t => ({
             id: t.id,
             name: t.querySelector('.table-id').value,
             left: t.style.left,
@@ -120,20 +155,12 @@
             isOccupied: t.classList.contains('occupied'),
             isCircle: t.classList.contains('circle')
         }));
-        localStorage.setItem('cafeTablesV2', JSON.stringify(dataToSave));
+        localStorage.setItem('shibaTablesV3', JSON.stringify(data));
+        updateStats();
     }
 
     function createNewTable(left = 100, top = 100, name = "新桌") {
-        const data = { 
-            id: 't-' + Date.now(), 
-            name, 
-            left: left + 'px', 
-            top: top + 'px', 
-            startTime: null, 
-            extraTime: 0,
-            isOccupied: false,
-            isCircle: false 
-        };
+        const data = { id: 't-' + Date.now(), name, left: left + 'px', top: top + 'px', startTime: null, extraTime: 0, isOccupied: false, isCircle: false };
         renderTable(data);
         saveToLocal();
     }
@@ -150,24 +177,16 @@
 
         table.innerHTML = `
             <button class="btn-delete" onclick="deleteTable('${data.id}')">×</button>
-            <button class="btn-shape" onclick="toggleShape('${data.id}')">O/□</button>
-            <input class="table-id" value="${data.name}" onchange="saveToLocal()">
+            <input class="table-id" value="${data.name}" onchange="saveToLocal()" ${!isEditMode?'readonly':''}>
             <div class="timer">--:--</div>
             <div class="btn-group">
                 <button class="btn-start" onclick="startTimer('${data.id}')" ${data.isOccupied ? 'disabled' : ''}>開桌</button>
-                <button class="btn-plus" onclick="addTime('${data.id}')">+15m</button>
+                <button class="btn-plus" onclick="addTime('${data.id}')">+15</button>
                 <button class="btn-reset" onclick="resetTable('${data.id}')">結帳</button>
             </div>
         `;
-
         setupDraggable(table);
         floor.appendChild(table);
-    }
-
-    function toggleShape(id) {
-        const el = document.getElementById(id);
-        el.classList.toggle('circle');
-        saveToLocal();
     }
 
     function startTimer(id) {
@@ -182,14 +201,14 @@
     function addTime(id) {
         const el = document.getElementById(id);
         if (!el.classList.contains('occupied')) return;
-        el.dataset.extraTime = (parseInt(el.dataset.extraTime) || 0) + (15 * 60);
+        el.dataset.extraTime = (parseInt(el.dataset.extraTime) || 0) + 900;
         saveToLocal();
     }
 
     function resetTable(id) {
         if (!confirm("確定結帳？")) return;
         const el = document.getElementById(id);
-        el.classList.remove('occupied', 'alert');
+        el.className = 'table' + (el.classList.contains('circle') ? ' circle' : '');
         el.dataset.startTime = "";
         el.dataset.extraTime = 0;
         el.querySelector('.timer').innerText = "--:--";
@@ -198,7 +217,13 @@
     }
 
     function deleteTable(id) {
-        if (confirm("刪除此桌？")) { document.getElementById(id).remove(); saveToLocal(); }
+        if (confirm("刪除？")) { document.getElementById(id).remove(); saveToLocal(); }
+    }
+
+    function updateStats() {
+        const total = document.querySelectorAll('.table').length;
+        const occupied = document.querySelectorAll('.table.occupied').length;
+        document.getElementById('stats-display').innerText = `滿席: ${occupied} / 空桌: ${total - occupied}`;
     }
 
     function updateAllTimers() {
@@ -209,15 +234,18 @@
             const timeLeft = (DEFAULT_DURATION + extra) - elapsed;
 
             const timerDisplay = el.querySelector('.timer');
+            el.classList.remove('warn', 'urgent', 'over');
+
             if (timeLeft <= 0) {
-                timerDisplay.innerText = "時間到";
-                el.classList.add('alert');
+                timerDisplay.innerText = "超時";
+                el.classList.add('over');
             } else {
                 const mins = Math.floor(timeLeft / 60);
                 const secs = timeLeft % 60;
                 timerDisplay.innerText = `${mins}:${secs.toString().padStart(2, '0')}`;
-                if (timeLeft <= 10 * 60) el.classList.add('alert');
-                else el.classList.remove('alert');
+                
+                if (timeLeft <= 300) el.classList.add('urgent'); // 5分
+                else if (timeLeft <= 900) el.classList.add('warn'); // 15分
             }
         });
     }
@@ -227,27 +255,24 @@
         let offset = { x: 0, y: 0 };
 
         const start = (e) => {
-            if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
+            if (!isEditMode || e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
             isDragging = true;
             const t = e.type.includes('touch') ? e.touches[0] : e;
-            offset.x = t.clientX - el.offsetLeft;
-            offset.y = t.clientY - el.offsetTop;
+            offset.x = (t.clientX / zoomScale) - el.offsetLeft;
+            offset.y = (t.clientY / zoomScale) - el.offsetTop;
             el.style.zIndex = 100;
         };
 
         const move = (e) => {
             if (!isDragging) return;
             const t = e.type.includes('touch') ? e.touches[0] : e;
-            let newX = t.clientX - offset.x;
-            let newY = t.clientY - offset.y;
-            // 磁吸對齊
-            el.style.left = Math.round(newX / GRID_SIZE) * GRID_SIZE + 'px';
-            el.style.top = Math.round(newY / GRID_SIZE) * GRID_SIZE + 'px';
+            let nx = (t.clientX / zoomScale) - offset.x;
+            let ny = (t.clientY / zoomScale) - offset.y;
+            el.style.left = 20 * Math.round(nx / 20) + 'px';
+            el.style.top = 20 * Math.round(ny / 20) + 'px';
         };
 
-        const stop = () => {
-            if (isDragging) { isDragging = false; el.style.zIndex = 10; saveToLocal(); }
-        };
+        const stop = () => { if (isDragging) { isDragging = false; saveToLocal(); } };
 
         el.addEventListener('mousedown', start);
         el.addEventListener('touchstart', start);
