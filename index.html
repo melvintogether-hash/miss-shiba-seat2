@@ -11,106 +11,53 @@
             --primary-brown: #5d4037;
             --table-free: #ffffff;
             --status-ok: #e8f5e9;
-            --status-warn: #fff9c4;   /* 15分 黃色 */
-            --status-urgent: #ffccbc; /* 5分 淺紅 */
-            --status-over: #ef9a9a;   /* 超時 深紅 */
+            --status-warn: #fff9c4;
+            --status-urgent: #ffccbc;
+            --status-over: #ef9a9a;
+            --status-swap: #bbdefb; /* 準備交換時的藍色 */
         }
-        body {
-            font-family: -apple-system, "Segoe UI", sans-serif;
-            background-color: var(--bg-color);
-            margin: 0;
-            overflow: hidden;
-            touch-action: none;
-        }
-        #header {
-            background: var(--primary-brown);
-            color: white;
-            padding: 10px 15px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-            z-index: 100;
-            position: relative;
-        }
+        body { font-family: -apple-system, sans-serif; background-color: var(--bg-color); margin: 0; overflow: hidden; touch-action: none; }
+        #header { background: var(--primary-brown); color: white; padding: 10px 15px; z-index: 100; position: relative; }
         .header-top { display: flex; justify-content: space-between; align-items: center; }
         .stats-bar { font-size: 0.9rem; margin-top: 5px; color: #d7ccc8; border-top: 1px solid #795548; padding-top: 5px; }
-        
-        #controls {
-            padding: 8px 15px;
-            background: #efebe9;
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            font-size: 14px;
-        }
-
-        #floor-plan-container {
-            width: 100vw;
-            height: calc(100vh - 140px);
-            overflow: auto;
-            background-image: radial-gradient(#d1cfc7 1px, transparent 1px);
-            background-size: 20px 20px;
-        }
+        #controls { padding: 8px 15px; background: #efebe9; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-size: 13px; }
+        #floor-plan-container { width: 100vw; height: calc(100vh - 160px); overflow: auto; background-image: radial-gradient(#d1cfc7 1px, transparent 1px); background-size: 20px 20px; }
         #floor-plan { position: relative; width: 2000px; height: 2000px; transform-origin: 0 0; }
-
-        .table {
-            position: absolute;
-            width: 130px;
-            height: 130px;
-            background: var(--table-free);
-            border: 2px solid #8d6e63;
-            border-radius: 15px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            z-index: 10;
-        }
-        .table.circle { border-radius: 50%; }
-        .table.is-locked { cursor: default; }
-        
-        /* 顏色狀態 */
+        .table { position: absolute; background: var(--table-free); border: 2px solid #8d6e63; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 10; min-width: 80px; min-height: 80px; }
         .occupied { background: var(--status-ok); border-color: #4caf50; }
         .warn { background: var(--status-warn); border-color: #fbc02d; }
         .urgent { background: var(--status-urgent); border-color: #ff5722; }
         .over { background: var(--status-over); border-color: #d32f2f; animation: pulse 1s infinite; }
-
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0px rgba(211, 47, 47, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(211, 47, 47, 0); }
-            100% { box-shadow: 0 0 0 0px rgba(211, 47, 47, 0); }
-        }
-
-        .table-id { font-weight: bold; font-size: 1.1rem; border: none; background: transparent; text-align: center; width: 70px; color: #5d4037; }
-        .timer { font-family: monospace; font-size: 1.2rem; font-weight: bold; margin: 4px 0; }
-        
-        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
-        button { padding: 5px; border-radius: 6px; border: none; cursor: pointer; font-size: 12px; }
-        .btn-start { background: #4caf50; color: white; grid-column: span 2; }
+        .swap-pending { background: var(--status-swap) !important; border-color: #2196f3 !important; border-style: dashed !important; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0px rgba(211, 47, 47, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(211, 47, 47, 0); } 100% { box-shadow: 0 0 0 0px rgba(211, 47, 47, 0); } }
+        .table-id { font-weight: bold; font-size: 1rem; border: none; background: transparent; text-align: center; width: 80%; color: #5d4037; pointer-events: none; }
+        .edit-mode .table-id { pointer-events: auto; background: rgba(255,255,255,0.5); }
+        .timer { font-family: monospace; font-size: 1.1rem; font-weight: bold; margin: 2px 0; }
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3px; width: 92%; }
+        button { padding: 4px; border-radius: 4px; border: none; cursor: pointer; font-size: 11px; }
+        .btn-start { background: #4caf50; color: white; grid-column: span 3; margin-bottom: 2px; }
         .btn-plus { background: #ff9800; color: white; }
+        .btn-swap { background: #2196f3; color: white; font-weight: bold; }
         .btn-reset { background: #757575; color: white; }
-        .btn-delete { position: absolute; top: -8px; right: -8px; background: #ff5252; color: white; width: 24px; height: 24px; border-radius: 50%; display: none; }
+        .resizer { position: absolute; bottom: 0; right: 0; width: 15px; height: 15px; background: #8d6e63; cursor: nwse-resize; border-radius: 0 0 6px 0; display: none; }
+        .edit-mode .resizer { display: block; }
+        .btn-delete { position: absolute; top: -10px; right: -10px; background: #ff5252; color: white; border-radius: 50%; width: 20px; height: 20px; display: none; z-index: 20; }
         .edit-mode .btn-delete { display: block; }
-        
-        .toggle-container { display: flex; align-items: center; gap: 5px; }
     </style>
 </head>
 <body>
 
 <div id="header">
     <div class="header-top">
-        <div style="font-size: 1.3rem; font-weight: bold;">🐶 MISS SHIBA Café</div>
-        <button id="add-btn" style="background:#fff; color:var(--primary-brown); font-weight:bold; padding: 5px 12px; display:none;" onclick="createNewTable()">＋桌位</button>
+        <div style="font-size: 1.2rem; font-weight: bold;">🐶 MISS SHIBA Café</div>
+        <button id="add-btn" style="background:#fff; color:var(--primary-brown); font-weight:bold; display:none;" onclick="createNewTable()">＋桌位</button>
     </div>
-    <div class="stats-bar" id="stats-display">滿席: 0 / 空桌: 8</div>
+    <div class="stats-bar" id="stats-display">載入中...</div>
 </div>
 
 <div id="controls">
-    <div class="toggle-container">
-        <input type="checkbox" id="lock-toggle" onchange="toggleLock()"> 🔧編輯模式
-    </div>
-    <div class="toggle-container">
-        🔎 <input type="range" id="zoom-slider" min="0.5" max="1.5" step="0.1" value="1" oninput="adjustZoom(this.value)">
-    </div>
+    <label><input type="checkbox" id="lock-toggle" onchange="toggleLock()"> 🔧編輯模式</label>
+    <span>🔎 <input type="range" min="0.5" max="1.5" step="0.1" value="1" oninput="adjustZoom(this.value)"></span>
 </div>
 
 <div id="floor-plan-container">
@@ -121,11 +68,12 @@
     const DEFAULT_DURATION = 90 * 60;
     let isEditMode = false;
     let zoomScale = 1;
-    let tablesData = JSON.parse(localStorage.getItem('shibaTablesV3')) || [];
+    let swapSourceId = null; // 紀錄準備換桌的 ID
+    let tablesData = JSON.parse(localStorage.getItem('shibaTablesV5')) || [];
 
     window.onload = () => {
         if (tablesData.length === 0) {
-            for(let i=1; i<=8; i++) createNewTable(50 + (i%3)*150, 50 + Math.floor(i/3)*150, `桌 ${i}`);
+            for(let i=1; i<=8; i++) createNewTable(30 + (i-1)*130, 50, `${i}`);
         } else {
             tablesData.forEach(data => renderTable(data));
         }
@@ -146,21 +94,19 @@
 
     function saveToLocal() {
         const data = Array.from(document.querySelectorAll('.table')).map(t => ({
-            id: t.id,
-            name: t.querySelector('.table-id').value,
-            left: t.style.left,
-            top: t.style.top,
+            id: t.id, name: t.querySelector('.table-id').value,
+            left: t.style.left, top: t.style.top,
+            width: t.style.width, height: t.style.height,
             startTime: t.dataset.startTime || null,
             extraTime: parseInt(t.dataset.extraTime) || 0,
-            isOccupied: t.classList.contains('occupied'),
-            isCircle: t.classList.contains('circle')
+            isOccupied: t.classList.contains('occupied')
         }));
-        localStorage.setItem('shibaTablesV3', JSON.stringify(data));
+        localStorage.setItem('shibaTablesV5', JSON.stringify(data));
         updateStats();
     }
 
-    function createNewTable(left = 100, top = 100, name = "新桌") {
-        const data = { id: 't-' + Date.now(), name, left: left + 'px', top: top + 'px', startTime: null, extraTime: 0, isOccupied: false, isCircle: false };
+    function createNewTable(left = 100, top = 100, name = "新") {
+        const data = { id: 't-' + Date.now(), name, left: left + 'px', top: top + 'px', width: '120px', height: '120px', startTime: null, extraTime: 0, isOccupied: false };
         renderTable(data);
         saveToLocal();
     }
@@ -168,31 +114,68 @@
     function renderTable(data) {
         const floor = document.getElementById('floor-plan');
         const table = document.createElement('div');
-        table.className = `table ${data.isOccupied ? 'occupied' : ''} ${data.isCircle ? 'circle' : ''}`;
-        table.style.left = data.left;
-        table.style.top = data.top;
+        table.className = `table ${data.isOccupied ? 'occupied' : ''}`;
+        table.style.left = data.left; table.style.top = data.top;
+        table.style.width = data.width; table.style.height = data.height;
         table.id = data.id;
         table.dataset.startTime = data.startTime || "";
         table.dataset.extraTime = data.extraTime || 0;
 
         table.innerHTML = `
             <button class="btn-delete" onclick="deleteTable('${data.id}')">×</button>
-            <input class="table-id" value="${data.name}" onchange="saveToLocal()" ${!isEditMode?'readonly':''}>
+            <input class="table-id" value="${data.name}" onchange="saveToLocal()" readonly>
             <div class="timer">--:--</div>
             <div class="btn-group">
                 <button class="btn-start" onclick="startTimer('${data.id}')" ${data.isOccupied ? 'disabled' : ''}>開桌</button>
                 <button class="btn-plus" onclick="addTime('${data.id}')">+15</button>
+                <button class="btn-swap" onclick="handleSwap('${data.id}')">⇄</button>
                 <button class="btn-reset" onclick="resetTable('${data.id}')">結帳</button>
             </div>
+            <div class="resizer"></div>
         `;
         setupDraggable(table);
         floor.appendChild(table);
     }
 
+    function handleSwap(id) {
+        const el = document.getElementById(id);
+        if (!swapSourceId) {
+            // 第一步：選中來源
+            swapSourceId = id;
+            el.classList.add('swap-pending');
+        } else if (swapSourceId === id) {
+            // 取消選中
+            el.classList.remove('swap-pending');
+            swapSourceId = null;
+        } else {
+            // 第二步：選中目標，進行交換
+            const src = document.getElementById(swapSourceId);
+            const target = document.getElementById(id);
+
+            // 交換數據
+            const tempStart = src.dataset.startTime;
+            const tempExtra = src.dataset.extraTime;
+            const tempOccupied = src.classList.contains('occupied');
+
+            src.dataset.startTime = target.dataset.startTime;
+            src.dataset.extraTime = target.dataset.extraTime;
+            if (target.classList.contains('occupied')) src.classList.add('occupied'); else src.classList.remove('occupied', 'warn', 'urgent', 'over');
+            src.querySelector('.btn-start').disabled = src.classList.contains('occupied');
+
+            target.dataset.startTime = tempStart;
+            target.dataset.extraTime = tempExtra;
+            if (tempOccupied) target.classList.add('occupied'); else target.classList.remove('occupied', 'warn', 'urgent', 'over');
+            target.querySelector('.btn-start').disabled = target.classList.contains('occupied');
+
+            src.classList.remove('swap-pending');
+            swapSourceId = null;
+            saveToLocal();
+        }
+    }
+
     function startTimer(id) {
         const el = document.getElementById(id);
         el.dataset.startTime = Date.now();
-        el.dataset.extraTime = 0;
         el.classList.add('occupied');
         el.querySelector('.btn-start').disabled = true;
         saveToLocal();
@@ -208,16 +191,16 @@
     function resetTable(id) {
         if (!confirm("確定結帳？")) return;
         const el = document.getElementById(id);
-        el.className = 'table' + (el.classList.contains('circle') ? ' circle' : '');
-        el.dataset.startTime = "";
-        el.dataset.extraTime = 0;
+        el.classList.remove('occupied', 'warn', 'urgent', 'over', 'swap-pending');
+        el.dataset.startTime = ""; el.dataset.extraTime = 0;
         el.querySelector('.timer').innerText = "--:--";
         el.querySelector('.btn-start').disabled = false;
+        if(swapSourceId === id) swapSourceId = null;
         saveToLocal();
     }
 
     function deleteTable(id) {
-        if (confirm("刪除？")) { document.getElementById(id).remove(); saveToLocal(); }
+        if (confirm("刪除此桌位？")) { document.getElementById(id).remove(); saveToLocal(); }
     }
 
     function updateStats() {
@@ -230,58 +213,56 @@
         document.querySelectorAll('.table.occupied').forEach(el => {
             const start = parseInt(el.dataset.startTime);
             const extra = parseInt(el.dataset.extraTime) || 0;
-            const elapsed = Math.floor((Date.now() - start) / 1000);
-            const timeLeft = (DEFAULT_DURATION + extra) - elapsed;
-
+            const timeLeft = (DEFAULT_DURATION + extra) - Math.floor((Date.now() - start) / 1000);
             const timerDisplay = el.querySelector('.timer');
             el.classList.remove('warn', 'urgent', 'over');
-
             if (timeLeft <= 0) {
-                timerDisplay.innerText = "超時";
-                el.classList.add('over');
+                timerDisplay.innerText = "超時"; el.classList.add('over');
             } else {
-                const mins = Math.floor(timeLeft / 60);
-                const secs = timeLeft % 60;
+                const mins = Math.floor(timeLeft / 60); const secs = timeLeft % 60;
                 timerDisplay.innerText = `${mins}:${secs.toString().padStart(2, '0')}`;
-                
-                if (timeLeft <= 300) el.classList.add('urgent'); // 5分
-                else if (timeLeft <= 900) el.classList.add('warn'); // 15分
+                if (timeLeft <= 300) el.classList.add('urgent');
+                else if (timeLeft <= 900) el.classList.add('warn');
             }
         });
     }
 
     function setupDraggable(el) {
-        let isDragging = false;
-        let offset = { x: 0, y: 0 };
-
-        const start = (e) => {
-            if (!isEditMode || e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
-            isDragging = true;
-            const t = e.type.includes('touch') ? e.touches[0] : e;
-            offset.x = (t.clientX / zoomScale) - el.offsetLeft;
-            offset.y = (t.clientY / zoomScale) - el.offsetTop;
-            el.style.zIndex = 100;
-        };
-
-        const move = (e) => {
-            if (!isDragging) return;
-            const t = e.type.includes('touch') ? e.touches[0] : e;
-            let nx = (t.clientX / zoomScale) - offset.x;
-            let ny = (t.clientY / zoomScale) - offset.y;
-            el.style.left = 20 * Math.round(nx / 20) + 'px';
-            el.style.top = 20 * Math.round(ny / 20) + 'px';
-        };
-
-        const stop = () => { if (isDragging) { isDragging = false; saveToLocal(); } };
-
+        let isDragging = false, isResizing = false;
+        let startX, startY, startW, startH, offset = { x: 0, y: 0 };
         el.addEventListener('mousedown', start);
         el.addEventListener('touchstart', start);
+        function start(e) {
+            const t = e.type.includes('touch') ? e.touches[0] : e;
+            if (e.target.className === 'resizer') {
+                isResizing = true; startX = t.clientX; startY = t.clientY;
+                startW = parseInt(el.style.width); startH = parseInt(el.style.height);
+                e.preventDefault();
+            } else if (isEditMode && e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT') {
+                isDragging = true;
+                offset.x = (t.clientX / zoomScale) - el.offsetLeft;
+                offset.y = (t.clientY / zoomScale) - el.offsetTop;
+                el.style.zIndex = 100;
+            }
+        }
         document.addEventListener('mousemove', move);
         document.addEventListener('touchmove', move, { passive: false });
-        document.addEventListener('mouseup', stop);
-        document.addEventListener('touchend', stop);
+        function move(e) {
+            const t = e.type.includes('touch') ? e.touches[0] : e;
+            if (isResizing) {
+                el.style.width = startW + (t.clientX - startX) / zoomScale + 'px';
+                el.style.height = startH + (t.clientY - startY) / zoomScale + 'px';
+            } else if (isDragging) {
+                let nx = (t.clientX / zoomScale) - offset.x;
+                let ny = (t.clientY / zoomScale) - offset.y;
+                el.style.left = 20 * Math.round(nx / 20) + 'px';
+                el.style.top = 20 * Math.round(ny / 20) + 'px';
+            }
+        }
+        document.addEventListener('mouseup', end);
+        document.addEventListener('touchend', end);
+        function end() { if (isDragging || isResizing) { isDragging = false; isResizing = false; saveToLocal(); } }
     }
 </script>
-
 </body>
 </html>
