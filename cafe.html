@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>咖啡廳管理系統 Pro</title>
+    <style>
+        :root {
+            --bg-color: #f4f1ea;
+            --table-free: #ffffff;
+            --table-busy: #e8f5e9;
+            --table-alert: #ffebee;
+            --primary-brown: #6f4e37;
+        }
+        body {
+            font-family: -apple-system, "Microsoft JhengHei", sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            overflow: hidden;
+            touch-action: none;
+        }
+        #header {
+            background: var(--primary-brown);
+            color: white;
+            padding: 0 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 60px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        #floor-plan {
+            width: 100vw;
+            height: calc(100vh - 60px);
+            position: relative;
+            background-image: radial-gradient(#d1cfc7 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        .table {
+            position: absolute;
+            width: 130px;
+            height: 130px;
+            background: var(--table-free);
+            border: 2px solid #8d6e63;
+            border-radius: 15px; /* 預設方桌 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: move;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            user-select: none;
+            transition: background 0.3s, border-radius 0.3s;
+            z-index: 10;
+        }
+        .table.circle { border-radius: 50%; }
+        .table.occupied { background: var(--table-busy); border-color: #4caf50; }
+        .table.alert { 
+            background: var(--table-alert); 
+            border-color: #f44336; 
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0px rgba(244, 67, 54, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(244, 67, 54, 0); }
+            100% { box-shadow: 0 0 0 0px rgba(244, 67, 54, 0); }
+        }
+        .table-id { font-weight: bold; font-size: 1rem; border: none; background: transparent; text-align: center; width: 60px; color: #5d4037; }
+        .timer { font-family: 'Courier New', monospace; font-size: 1.2rem; font-weight: bold; margin: 2px 0; }
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 5px; }
+        button {
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-size: 11px;
+            background: #eee;
+        }
+        .btn-start { background: #4caf50; color: white; grid-column: span 2; font-size: 13px; }
+        .btn-plus { background: #ff9800; color: white; }
+        .btn-reset { background: #757575; color: white; }
+        .btn-delete { background: white; color: #ff5252; position: absolute; top: -5px; right: -5px; border: 1px solid #ff5252; border-radius: 50%; width: 22px; height: 22px; z-index: 20; }
+        .btn-shape { position: absolute; top: -5px; left: -5px; background: white; border: 1px solid #8d6e63; border-radius: 50%; width: 22px; height: 22px; font-size: 10px; padding: 0; }
+        .btn-add { background: #fff; color: var(--primary-brown); font-weight: bold; padding: 8px 15px; border-radius: 20px; }
+    </style>
+</head>
+<body>
+
+<div id="header">
+    <div style="font-size: 1.1rem; font-weight: bold;">☕ 店內桌位管理</div>
+    <button class="btn-add" onclick="createNewTable()">＋ 新增桌位</button>
+</div>
+
+<div id="floor-plan"></div>
+
+<script>
+    const DEFAULT_DURATION = 90 * 60;
+    const GRID_SIZE = 20; // 磁吸網格大小
+    let tablesData = JSON.parse(localStorage.getItem('cafeTablesV2')) || [];
+
+    window.onload = () => {
+        if (tablesData.length === 0) {
+            createNewTable(40, 40, "A1");
+            createNewTable(200, 40, "A2");
+        } else {
+            tablesData.forEach(data => renderTable(data));
+        }
+        setInterval(updateAllTimers, 1000);
+    };
+
+    function saveToLocal() {
+        const allTables = document.querySelectorAll('.table');
+        const dataToSave = Array.from(allTables).map(t => ({
+            id: t.id,
+            name: t.querySelector('.table-id').value,
+            left: t.style.left,
+            top: t.style.top,
+            startTime: t.dataset.startTime || null,
+            extraTime: parseInt(t.dataset.extraTime) || 0,
+            isOccupied: t.classList.contains('occupied'),
+            isCircle: t.classList.contains('circle')
+        }));
+        localStorage.setItem('cafeTablesV2', JSON.stringify(dataToSave));
+    }
+
+    function createNewTable(left = 100, top = 100, name = "新桌") {
+        const data = { 
+            id: 't-' + Date.now(), 
+            name, 
+            left: left + 'px', 
+            top: top + 'px', 
+            startTime: null, 
+            extraTime: 0,
+            isOccupied: false,
+            isCircle: false 
+        };
+        renderTable(data);
+        saveToLocal();
+    }
+
+    function renderTable(data) {
+        const floor = document.getElementById('floor-plan');
+        const table = document.createElement('div');
+        table.className = `table ${data.isOccupied ? 'occupied' : ''} ${data.isCircle ? 'circle' : ''}`;
+        table.style.left = data.left;
+        table.style.top = data.top;
+        table.id = data.id;
+        table.dataset.startTime = data.startTime || "";
+        table.dataset.extraTime = data.extraTime || 0;
+
+        table.innerHTML = `
+            <button class="btn-delete" onclick="deleteTable('${data.id}')">×</button>
+            <button class="btn-shape" onclick="toggleShape('${data.id}')">O/□</button>
+            <input class="table-id" value="${data.name}" onchange="saveToLocal()">
+            <div class="timer">--:--</div>
+            <div class="btn-group">
+                <button class="btn-start" onclick="startTimer('${data.id}')" ${data.isOccupied ? 'disabled' : ''}>開桌</button>
+                <button class="btn-plus" onclick="addTime('${data.id}')">+15m</button>
+                <button class="btn-reset" onclick="resetTable('${data.id}')">結帳</button>
+            </div>
+        `;
+
+        setupDraggable(table);
+        floor.appendChild(table);
+    }
+
+    function toggleShape(id) {
+        const el = document.getElementById(id);
+        el.classList.toggle('circle');
+        saveToLocal();
+    }
+
+    function startTimer(id) {
+        const el = document.getElementById(id);
+        el.dataset.startTime = Date.now();
+        el.dataset.extraTime = 0;
+        el.classList.add('occupied');
+        el.querySelector('.btn-start').disabled = true;
+        saveToLocal();
+    }
+
+    function addTime(id) {
+        const el = document.getElementById(id);
+        if (!el.classList.contains('occupied')) return;
+        el.dataset.extraTime = (parseInt(el.dataset.extraTime) || 0) + (15 * 60);
+        saveToLocal();
+    }
+
+    function resetTable(id) {
+        if (!confirm("確定結帳？")) return;
+        const el = document.getElementById(id);
+        el.classList.remove('occupied', 'alert');
+        el.dataset.startTime = "";
+        el.dataset.extraTime = 0;
+        el.querySelector('.timer').innerText = "--:--";
+        el.querySelector('.btn-start').disabled = false;
+        saveToLocal();
+    }
+
+    function deleteTable(id) {
+        if (confirm("刪除此桌？")) { document.getElementById(id).remove(); saveToLocal(); }
+    }
+
+    function updateAllTimers() {
+        document.querySelectorAll('.table.occupied').forEach(el => {
+            const start = parseInt(el.dataset.startTime);
+            const extra = parseInt(el.dataset.extraTime) || 0;
+            const elapsed = Math.floor((Date.now() - start) / 1000);
+            const timeLeft = (DEFAULT_DURATION + extra) - elapsed;
+
+            const timerDisplay = el.querySelector('.timer');
+            if (timeLeft <= 0) {
+                timerDisplay.innerText = "時間到";
+                el.classList.add('alert');
+            } else {
+                const mins = Math.floor(timeLeft / 60);
+                const secs = timeLeft % 60;
+                timerDisplay.innerText = `${mins}:${secs.toString().padStart(2, '0')}`;
+                if (timeLeft <= 10 * 60) el.classList.add('alert');
+                else el.classList.remove('alert');
+            }
+        });
+    }
+
+    function setupDraggable(el) {
+        let isDragging = false;
+        let offset = { x: 0, y: 0 };
+
+        const start = (e) => {
+            if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
+            isDragging = true;
+            const t = e.type.includes('touch') ? e.touches[0] : e;
+            offset.x = t.clientX - el.offsetLeft;
+            offset.y = t.clientY - el.offsetTop;
+            el.style.zIndex = 100;
+        };
+
+        const move = (e) => {
+            if (!isDragging) return;
+            const t = e.type.includes('touch') ? e.touches[0] : e;
+            let newX = t.clientX - offset.x;
+            let newY = t.clientY - offset.y;
+            // 磁吸對齊
+            el.style.left = Math.round(newX / GRID_SIZE) * GRID_SIZE + 'px';
+            el.style.top = Math.round(newY / GRID_SIZE) * GRID_SIZE + 'px';
+        };
+
+        const stop = () => {
+            if (isDragging) { isDragging = false; el.style.zIndex = 10; saveToLocal(); }
+        };
+
+        el.addEventListener('mousedown', start);
+        el.addEventListener('touchstart', start);
+        document.addEventListener('mousemove', move);
+        document.addEventListener('touchmove', move, { passive: false });
+        document.addEventListener('mouseup', stop);
+        document.addEventListener('touchend', stop);
+    }
+</script>
+
+</body>
+</html>
