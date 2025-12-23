@@ -129,7 +129,7 @@
                 <button class="btn-start" onclick="startTimer('${data.id}')" ${data.isOccupied ? 'disabled' : ''}>開桌</button>
                 <button class="btn-plus" onclick="addTime('${data.id}')">+15</button>
                 <button class="btn-swap" onclick="handleSwap('${data.id}')">⇄</button>
-                <button class="btn-reset" onclick="resetTable('${data.id}')">結帳</button>
+                <button class="btn-reset" onclick="resetTable('${data.id}')">清桌</button>
             </div>
             <div class="resizer"></div>
         `;
@@ -189,7 +189,7 @@
     }
 
     function resetTable(id) {
-        if (!confirm("確定結帳？")) return;
+        if (!confirm("確定清桌？”)) return;
         const el = document.getElementById(id);
         el.classList.remove('occupied', 'warn', 'urgent', 'over', 'swap-pending');
         el.dataset.startTime = ""; el.dataset.extraTime = 0;
