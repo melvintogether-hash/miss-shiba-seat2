@@ -14,7 +14,7 @@
             --status-warn: #fff9c4;
             --status-urgent: #ffccbc;
             --status-over: #ef9a9a;
-            --status-swap: #bbdefb; /* 準備交換時的藍色 */
+            --status-swap: #2196f3; 
         }
         body { font-family: -apple-system, sans-serif; background-color: var(--bg-color); margin: 0; overflow: hidden; touch-action: none; }
         #header { background: var(--primary-brown); color: white; padding: 10px 15px; z-index: 100; position: relative; }
@@ -23,23 +23,36 @@
         #controls { padding: 8px 15px; background: #efebe9; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-size: 13px; }
         #floor-plan-container { width: 100vw; height: calc(100vh - 160px); overflow: auto; background-image: radial-gradient(#d1cfc7 1px, transparent 1px); background-size: 20px 20px; }
         #floor-plan { position: relative; width: 2000px; height: 2000px; transform-origin: 0 0; }
+        
         .table { position: absolute; background: var(--table-free); border: 2px solid #8d6e63; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 10; min-width: 80px; min-height: 80px; }
         .occupied { background: var(--status-ok); border-color: #4caf50; }
         .warn { background: var(--status-warn); border-color: #fbc02d; }
         .urgent { background: var(--status-urgent); border-color: #ff5722; }
         .over { background: var(--status-over); border-color: #d32f2f; animation: pulse 1s infinite; }
-        .swap-pending { background: var(--status-swap) !important; border-color: #2196f3 !important; border-style: dashed !important; }
+        
+        /* 選中換桌時的動畫 */
+        .swap-pending { 
+            outline: 4px solid var(--status-swap) !important; 
+            outline-offset: 2px;
+            animation: swap-blink 0.8s infinite;
+            z-index: 50 !important;
+        }
+        @keyframes swap-blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        
         @keyframes pulse { 0% { box-shadow: 0 0 0 0px rgba(211, 47, 47, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(211, 47, 47, 0); } 100% { box-shadow: 0 0 0 0px rgba(211, 47, 47, 0); } }
+        
         .table-id { font-weight: bold; font-size: 1rem; border: none; background: transparent; text-align: center; width: 80%; color: #5d4037; pointer-events: none; }
         .edit-mode .table-id { pointer-events: auto; background: rgba(255,255,255,0.5); }
-        .timer { font-family: monospace; font-size: 1.1rem; font-weight: bold; margin: 2px 0; }
+        .timer { font-family: monospace; font-size: 1.1rem; font-weight: bold; margin: 2px 0; pointer-events: none; }
+        
         .btn-group { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3px; width: 92%; }
-        button { padding: 4px; border-radius: 4px; border: none; cursor: pointer; font-size: 11px; }
+        button { padding: 5px; border-radius: 4px; border: none; cursor: pointer; font-size: 11px; }
         .btn-start { background: #4caf50; color: white; grid-column: span 3; margin-bottom: 2px; }
         .btn-plus { background: #ff9800; color: white; }
-        .btn-swap { background: #2196f3; color: white; font-weight: bold; }
+        .btn-swap { background: #2196f3; color: white; font-weight: bold; border: 1px solid rgba(0,0,0,0.1); }
         .btn-reset { background: #757575; color: white; }
-        .resizer { position: absolute; bottom: 0; right: 0; width: 15px; height: 15px; background: #8d6e63; cursor: nwse-resize; border-radius: 0 0 6px 0; display: none; }
+        
+        .resizer { position: absolute; bottom: 0; right: 0; width: 15px; height: 15px; background: #8d6e63; cursor: nwse-resize; display: none; }
         .edit-mode .resizer { display: block; }
         .btn-delete { position: absolute; top: -10px; right: -10px; background: #ff5252; color: white; border-radius: 50%; width: 20px; height: 20px; display: none; z-index: 20; }
         .edit-mode .btn-delete { display: block; }
@@ -52,7 +65,7 @@
         <div style="font-size: 1.2rem; font-weight: bold;">🐶 MISS SHIBA Café</div>
         <button id="add-btn" style="background:#fff; color:var(--primary-brown); font-weight:bold; display:none;" onclick="createNewTable()">＋桌位</button>
     </div>
-    <div class="stats-bar" id="stats-display">載入中...</div>
+    <div class="stats-bar" id="stats-display">統計中...</div>
 </div>
 
 <div id="controls">
@@ -68,8 +81,8 @@
     const DEFAULT_DURATION = 90 * 60;
     let isEditMode = false;
     let zoomScale = 1;
-    let swapSourceId = null; // 紀錄準備換桌的 ID
-    let tablesData = JSON.parse(localStorage.getItem('shibaTablesV5')) || [];
+    let swapSourceId = null;
+    let tablesData = JSON.parse(localStorage.getItem('shibaTablesV6')) || [];
 
     window.onload = () => {
         if (tablesData.length === 0) {
@@ -101,7 +114,7 @@
             extraTime: parseInt(t.dataset.extraTime) || 0,
             isOccupied: t.classList.contains('occupied')
         }));
-        localStorage.setItem('shibaTablesV5', JSON.stringify(data));
+        localStorage.setItem('shibaTablesV6', JSON.stringify(data));
         updateStats();
     }
 
@@ -128,7 +141,7 @@
             <div class="btn-group">
                 <button class="btn-start" onclick="startTimer('${data.id}')" ${data.isOccupied ? 'disabled' : ''}>開桌</button>
                 <button class="btn-plus" onclick="addTime('${data.id}')">+15</button>
-                <button class="btn-swap" onclick="handleSwap('${data.id}')">⇄</button>
+                <button class="btn-swap" onclick="handleSwap(event, '${data.id}')">換桌</button>
                 <button class="btn-reset" onclick="resetTable('${data.id}')">結帳</button>
             </div>
             <div class="resizer"></div>
@@ -137,39 +150,52 @@
         floor.appendChild(table);
     }
 
-    function handleSwap(id) {
-        const el = document.getElementById(id);
+    function handleSwap(e, id) {
+        e.stopPropagation(); // 防止點擊按鈕觸發桌子拖拽
+        const targetEl = document.getElementById(id);
+
         if (!swapSourceId) {
-            // 第一步：選中來源
+            // 第一階段：選中來源
             swapSourceId = id;
-            el.classList.add('swap-pending');
+            targetEl.classList.add('swap-pending');
         } else if (swapSourceId === id) {
             // 取消選中
-            el.classList.remove('swap-pending');
+            targetEl.classList.remove('swap-pending');
             swapSourceId = null;
         } else {
-            // 第二步：選中目標，進行交換
-            const src = document.getElementById(swapSourceId);
-            const target = document.getElementById(id);
+            // 第二階段：執行對調
+            const srcEl = document.getElementById(swapSourceId);
+            
+            // 互換數據
+            const tempStart = srcEl.dataset.startTime;
+            const tempExtra = srcEl.dataset.extraTime;
+            const tempOccupied = srcEl.classList.contains('occupied');
 
-            // 交換數據
-            const tempStart = src.dataset.startTime;
-            const tempExtra = src.dataset.extraTime;
-            const tempOccupied = src.classList.contains('occupied');
+            // 將目標桌的資料給來源桌
+            srcEl.dataset.startTime = targetEl.dataset.startTime;
+            srcEl.dataset.extraTime = targetEl.dataset.extraTime;
+            if (targetEl.classList.contains('occupied')) {
+                srcEl.classList.add('occupied');
+            } else {
+                srcEl.classList.remove('occupied', 'warn', 'urgent', 'over');
+            }
+            srcEl.querySelector('.btn-start').disabled = srcEl.classList.contains('occupied');
 
-            src.dataset.startTime = target.dataset.startTime;
-            src.dataset.extraTime = target.dataset.extraTime;
-            if (target.classList.contains('occupied')) src.classList.add('occupied'); else src.classList.remove('occupied', 'warn', 'urgent', 'over');
-            src.querySelector('.btn-start').disabled = src.classList.contains('occupied');
+            // 將來源桌資料給目標桌
+            targetEl.dataset.startTime = tempStart;
+            targetEl.dataset.extraTime = tempExtra;
+            if (tempOccupied) {
+                targetEl.classList.add('occupied');
+            } else {
+                targetEl.classList.remove('occupied', 'warn', 'urgent', 'over');
+            }
+            targetEl.querySelector('.btn-start').disabled = targetEl.classList.contains('occupied');
 
-            target.dataset.startTime = tempStart;
-            target.dataset.extraTime = tempExtra;
-            if (tempOccupied) target.classList.add('occupied'); else target.classList.remove('occupied', 'warn', 'urgent', 'over');
-            target.querySelector('.btn-start').disabled = target.classList.contains('occupied');
-
-            src.classList.remove('swap-pending');
+            // 重置狀態
+            srcEl.classList.remove('swap-pending');
             swapSourceId = null;
             saveToLocal();
+            alert("換桌成功！");
         }
     }
 
@@ -215,6 +241,10 @@
             const extra = parseInt(el.dataset.extraTime) || 0;
             const timeLeft = (DEFAULT_DURATION + extra) - Math.floor((Date.now() - start) / 1000);
             const timerDisplay = el.querySelector('.timer');
+            
+            // 只有正在換桌的那張桌子不要頻繁閃爍，保持藍色
+            if (el.id === swapSourceId) return;
+
             el.classList.remove('warn', 'urgent', 'over');
             if (timeLeft <= 0) {
                 timerDisplay.innerText = "超時"; el.classList.add('over');
