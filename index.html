@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>MISS SHIBA Café - 完美佈局版</title>
+    <title>MISS SHIBA Café - 佈局優化版</title>
     <style>
         :root {
             --bg-color: #f8f4f0;
@@ -15,35 +15,35 @@
             --status-urgent: #ffccbc;
             --status-over: #ef9a9a;
             --table-w: 160px;
-            --table-h: 180px;
-            --gap: 20px;
+            --table-h: 210px; /* 稍微增加高度，確保結帳按鈕不被遮擋 */
+            --gap-x: 15px;    /* 左右間距 */
+            --gap-y: 45px;    /* 上下行間距：解決您提到的太靠近問題 */
         }
         body { font-family: -apple-system, sans-serif; background-color: var(--bg-color); margin: 0; overflow: hidden; touch-action: none; }
         #header { background: var(--primary-brown); color: white; padding: 12px 15px; z-index: 1000; position: relative; }
         .header-top { display: flex; justify-content: space-between; align-items: center; }
         .stats-bar { font-size: 0.9rem; margin-top: 5px; color: #d7ccc8; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 5px; }
-        #controls { padding: 10px 15px; background: #efebe9; display: flex; align-items: center; gap: 20px; font-size: 14px; border-bottom: 1px solid #d7ccc8; }
+        #controls { padding: 10px 15px; background: #efebe9; display: flex; align-items: center; gap: 15px; font-size: 14px; border-bottom: 1px solid #d7ccc8; }
         
-        /* 畫布與自動排版容器 */
-        #floor-plan-container { width: 100vw; height: calc(100vh - 170px); overflow: auto; background-color: #eee; }
+        #floor-plan-container { width: 100vw; height: calc(100vh - 170px); overflow: auto; background-color: #eee; -webkit-overflow-scrolling: touch; }
         #floor-plan { 
             position: relative; 
-            padding: var(--gap);
+            padding: 25px;
             display: grid;
-            grid-template-columns: repeat(4, var(--table-w)); /* 固定一排四桌 */
-            grid-gap: var(--gap);
+            grid-template-columns: repeat(4, var(--table-w));
+            grid-column-gap: var(--gap-x);
+            grid-row-gap: var(--gap-y); /* 核心修正：拉開排與排的距離 */
             width: fit-content;
             transform-origin: 0 0;
         }
         
-        /* 桌子樣式 */
         .table { 
             background: var(--table-free); 
             border: 3px solid #8d6e63; border-radius: 12px; 
             display: flex; flex-direction: column; align-items: center; justify-content: space-between; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1); padding: 10px 0;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); padding: 12px 0;
             width: var(--table-w); height: var(--table-h);
-            position: relative; /* 改為相對定位以配合 Grid */
+            position: relative;
             box-sizing: border-box;
         }
         .occupied { background: var(--status-ok); border-color: #4caf50; }
@@ -53,15 +53,16 @@
         @keyframes pulse { 0% { box-shadow: 0 0 0 0px rgba(211,47,47,0.4); } 70% { box-shadow: 0 0 0 10px rgba(211,47,47,0); } 100% { box-shadow: 0 0 0 0px rgba(211,47,47,0); } }
 
         .table-id { font-weight: bold; font-size: 1.3rem; border: none; background: transparent; text-align: center; width: 90%; color: #3e2723; pointer-events: none; }
-        .timer { font-family: monospace; font-size: 1.5rem; font-weight: bold; margin-bottom: 5px; }
+        .timer { font-family: monospace; font-size: 1.5rem; font-weight: bold; margin: 5px 0; color: #333; }
         
-        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; width: 90%; }
-        button { padding: 12px 2px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: bold; }
-        .btn-start { background: #4caf50; color: white; grid-column: span 2; font-size: 15px; }
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; width: 92%; }
+        button { padding: 10px 2px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: bold; transition: opacity 0.2s; }
+        button:active { opacity: 0.7; }
+        .btn-start { background: #4caf50; color: white; grid-column: span 2; font-size: 15px; padding: 12px 0; }
         .btn-start:disabled { background: #ccc; color: #666; }
         .btn-plus { background: #ff9800; color: white; }
         .btn-swap { background: #2196f3; color: white; }
-        .btn-reset { background: #757575; color: white; grid-column: span 2; margin-top: 4px; }
+        .btn-reset { background: #757575; color: white; grid-column: span 2; margin-top: 5px; padding: 10px 0; }
 
         /* 換桌彈窗 */
         #swap-overlay {
@@ -70,17 +71,16 @@
             display: none; flex-direction: column; align-items: center; justify-content: center;
         }
         #swap-menu {
-            background: white; width: 85%; max-width: 400px; border-radius: 20px;
-            padding: 25px; text-align: center;
+            background: white; width: 88%; max-width: 420px; border-radius: 24px;
+            padding: 25px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
         .swap-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; max-height: 50vh; overflow-y: auto; }
-        .swap-item { padding: 15px; background: #f0f0f0; border-radius: 12px; font-size: 1.2rem; font-weight: bold; }
-        .btn-cancel { margin-top: 20px; background: #eee; width: 100%; padding: 15px; border-radius: 12px; }
+        .swap-item { padding: 18px; background: #f5f5f5; border-radius: 12px; font-size: 1.2rem; font-weight: bold; border: 1px solid #ddd; }
+        .btn-cancel { margin-top: 20px; background: #eee; width: 100%; padding: 15px; border-radius: 12px; font-weight: bold; color: #666; }
 
-        /* 編輯模式僅保留刪除與改名 */
-        .btn-delete { position: absolute; top: -10px; right: -10px; background: #f44336; color: white; border-radius: 50%; width: 30px; height: 30px; display: none; z-index: 100; font-size: 20px; border: 2px solid white; }
+        .btn-delete { position: absolute; top: -10px; right: -10px; background: #f44336; color: white; border-radius: 50%; width: 30px; height: 30px; display: none; z-index: 100; font-size: 20px; border: 2px solid white; line-height: 26px; }
         .edit-mode .btn-delete { display: block; }
-        .edit-mode .table-id { pointer-events: auto; background: rgba(255,255,255,0.5); }
+        .edit-mode .table-id { pointer-events: auto; background: rgba(255,255,255,0.5); border-bottom: 1px dashed #8d6e63; }
     </style>
 </head>
 <body>
@@ -88,15 +88,15 @@
 <div id="header">
     <div class="header-top">
         <div style="font-size: 1.3rem; font-weight: bold;">🐶 MISS SHIBA Café</div>
-        <button id="add-btn" style="background:#fff; color:var(--primary-brown); font-weight:bold; display:none;" onclick="addNewTable()">＋增設桌位</button>
+        <button id="add-btn" style="background:#fff; color:var(--primary-brown); font-weight:bold; display:none; padding: 5px 15px; border-radius: 15px;" onclick="addNewTable()">＋增設桌位</button>
     </div>
     <div class="stats-bar" id="stats-display">統計中...</div>
 </div>
 
 <div id="controls">
-    <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" id="lock-toggle" onchange="toggleLock()"> 🔧配置/改名模式</label>
+    <label style="display:flex; align-items:center; gap:8px; font-weight:bold; color:#5d4037;"><input type="checkbox" id="lock-toggle" style="width:18px; height:18px;" onchange="toggleLock()"> 🔧配置模式</label>
     <div style="flex-grow:1; text-align:right;">
-        🔎 <input type="range" min="0.5" max="1.5" step="0.1" value="1" oninput="adjustZoom(this.value)">
+        🔎 <input type="range" min="0.4" max="1.4" step="0.1" value="1" style="width:100px;" oninput="adjustZoom(this.value)">
     </div>
 </div>
 
@@ -106,7 +106,7 @@
 
 <div id="swap-overlay">
     <div id="swap-menu">
-        <div id="swap-title" style="font-weight:bold; font-size:1.2rem;">請選取目標桌號</div>
+        <div id="swap-title" style="font-weight:bold; font-size:1.2rem; color:#5d4037;">請選取目標桌號</div>
         <div class="swap-grid" id="swap-list"></div>
         <button class="btn-cancel" onclick="closeSwap()">取消</button>
     </div>
@@ -116,12 +116,10 @@
     const DEFAULT_DURATION = 90 * 60;
     let zoomScale = 1;
     let sourceId = null;
-    // 使用 V11 版本
-    let tablesData = JSON.parse(localStorage.getItem('shibaTablesV11')) || [];
+    let tablesData = JSON.parse(localStorage.getItem('shibaTablesV12')) || [];
 
     window.onload = () => {
         if (tablesData.length === 0) {
-            // 初始化 8 張桌子 (4x2)
             for(let i=1; i<=8; i++) {
                 tablesData.push({ id: 't'+Date.now()+i, name: i.toString(), startTime: "", extraTime: 0, isOccupied: false });
             }
@@ -167,7 +165,7 @@
     }
 
     function saveToLocal() {
-        localStorage.setItem('shibaTablesV11', JSON.stringify(tablesData));
+        localStorage.setItem('shibaTablesV12', JSON.stringify(tablesData));
     }
 
     function addNewTable() {
@@ -230,22 +228,13 @@
             btn.onclick = () => {
                 const srcIdx = tablesData.findIndex(x => x.id === sourceId);
                 const tarIdx = tablesData.findIndex(x => x.id === t.id);
-                
-                // 僅對調數據部分
-                const temp = { 
-                    st: tablesData[srcIdx].startTime, 
-                    et: tablesData[srcIdx].extraTime, 
-                    oc: tablesData[srcIdx].isOccupied 
-                };
-                
+                const temp = { st: tablesData[srcIdx].startTime, et: tablesData[srcIdx].extraTime, oc: tablesData[srcIdx].isOccupied };
                 tablesData[srcIdx].startTime = tablesData[tarIdx].startTime;
                 tablesData[srcIdx].extraTime = tablesData[tarIdx].extraTime;
                 tablesData[srcIdx].isOccupied = tablesData[tarIdx].isOccupied;
-                
                 tablesData[tarIdx].startTime = temp.st;
                 tablesData[tarIdx].extraTime = temp.et;
                 tablesData[tarIdx].isOccupied = temp.oc;
-                
                 closeSwap();
                 renderAllTables();
             };
@@ -271,7 +260,6 @@
             if(!el) return;
             const timeLeft = (DEFAULT_DURATION + data.extraTime) - Math.floor((Date.now() - data.startTime) / 1000);
             const timerDisplay = el.querySelector('.timer');
-            
             el.classList.remove('warn', 'urgent', 'over');
             if (timeLeft <= 0) {
                 timerDisplay.innerText = "超時"; el.classList.add('over');
