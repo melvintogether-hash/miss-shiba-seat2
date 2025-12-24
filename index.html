@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>MISS SHIBA Café Elite</title>
+    <title>MISS SHIBA Café - 完美佈局版</title>
     <style>
         :root {
             --bg-color: #f8f4f0;
@@ -14,21 +14,37 @@
             --status-warn: #fff9c4;
             --status-urgent: #ffccbc;
             --status-over: #ef9a9a;
+            --table-w: 160px;
+            --table-h: 180px;
+            --gap: 20px;
         }
         body { font-family: -apple-system, sans-serif; background-color: var(--bg-color); margin: 0; overflow: hidden; touch-action: none; }
-        #header { background: var(--primary-brown); color: white; padding: 10px 15px; z-index: 1000; position: relative; }
+        #header { background: var(--primary-brown); color: white; padding: 12px 15px; z-index: 1000; position: relative; }
         .header-top { display: flex; justify-content: space-between; align-items: center; }
-        .stats-bar { font-size: 0.9rem; margin-top: 5px; color: #d7ccc8; border-top: 1px solid #795548; padding-top: 5px; }
-        #controls { padding: 8px 15px; background: #efebe9; display: flex; align-items: center; gap: 15px; font-size: 14px; }
-        #floor-plan-container { width: 100vw; height: calc(100vh - 160px); overflow: auto; background-color: #eee; }
-        #floor-plan { position: relative; width: 1500px; height: 1500px; transform-origin: 0 0; }
+        .stats-bar { font-size: 0.9rem; margin-top: 5px; color: #d7ccc8; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 5px; }
+        #controls { padding: 10px 15px; background: #efebe9; display: flex; align-items: center; gap: 20px; font-size: 14px; border-bottom: 1px solid #d7ccc8; }
         
-        /* 桌子樣式優化 */
+        /* 畫布與自動排版容器 */
+        #floor-plan-container { width: 100vw; height: calc(100vh - 170px); overflow: auto; background-color: #eee; }
+        #floor-plan { 
+            position: relative; 
+            padding: var(--gap);
+            display: grid;
+            grid-template-columns: repeat(4, var(--table-w)); /* 固定一排四桌 */
+            grid-gap: var(--gap);
+            width: fit-content;
+            transform-origin: 0 0;
+        }
+        
+        /* 桌子樣式 */
         .table { 
-            position: absolute; background: var(--table-free); 
+            background: var(--table-free); 
             border: 3px solid #8d6e63; border-radius: 12px; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            z-index: 10; min-width: 100px; min-height: 100px; 
+            display: flex; flex-direction: column; align-items: center; justify-content: space-between; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); padding: 10px 0;
+            width: var(--table-w); height: var(--table-h);
+            position: relative; /* 改為相對定位以配合 Grid */
+            box-sizing: border-box;
         }
         .occupied { background: var(--status-ok); border-color: #4caf50; }
         .warn { background: var(--status-warn); border-color: #fbc02d; }
@@ -36,35 +52,35 @@
         .over { background: var(--status-over); border-color: #d32f2f; animation: pulse 1s infinite; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0px rgba(211,47,47,0.4); } 70% { box-shadow: 0 0 0 10px rgba(211,47,47,0); } 100% { box-shadow: 0 0 0 0px rgba(211,47,47,0); } }
 
-        .table-id { font-weight: bold; font-size: 1.2rem; border: none; background: transparent; text-align: center; width: 90%; color: #3e2723; pointer-events: none; }
-        .timer { font-family: monospace; font-size: 1.3rem; font-weight: bold; margin-bottom: 5px; pointer-events: none; }
+        .table-id { font-weight: bold; font-size: 1.3rem; border: none; background: transparent; text-align: center; width: 90%; color: #3e2723; pointer-events: none; }
+        .timer { font-family: monospace; font-size: 1.5rem; font-weight: bold; margin-bottom: 5px; }
         
-        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; width: 90%; }
-        button { padding: 8px 4px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: bold; }
-        .btn-start { background: #4caf50; color: white; grid-column: span 2; }
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; width: 90%; }
+        button { padding: 12px 2px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: bold; }
+        .btn-start { background: #4caf50; color: white; grid-column: span 2; font-size: 15px; }
+        .btn-start:disabled { background: #ccc; color: #666; }
         .btn-plus { background: #ff9800; color: white; }
         .btn-swap { background: #2196f3; color: white; }
-        .btn-reset { background: #757575; color: white; grid-column: span 2; margin-top: 3px; }
+        .btn-reset { background: #757575; color: white; grid-column: span 2; margin-top: 4px; }
 
-        /* 換桌選單全螢幕遮罩 */
+        /* 換桌彈窗 */
         #swap-overlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0,0,0,0.8); z-index: 9999;
+            background: rgba(0,0,0,0.85); z-index: 9999;
             display: none; flex-direction: column; align-items: center; justify-content: center;
         }
         #swap-menu {
             background: white; width: 85%; max-width: 400px; border-radius: 20px;
-            padding: 20px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            padding: 25px; text-align: center;
         }
-        .swap-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
-        .swap-item { padding: 20px; background: #f0f0f0; border-radius: 12px; font-size: 1.2rem; font-weight: bold; }
-        .swap-item.active { background: #2196f3; color: white; }
-        .btn-cancel { margin-top: 20px; background: #ccc; padding: 10px 30px; border-radius: 10px; }
+        .swap-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; max-height: 50vh; overflow-y: auto; }
+        .swap-item { padding: 15px; background: #f0f0f0; border-radius: 12px; font-size: 1.2rem; font-weight: bold; }
+        .btn-cancel { margin-top: 20px; background: #eee; width: 100%; padding: 15px; border-radius: 12px; }
 
-        .resizer { position: absolute; bottom: 0; right: 0; width: 25px; height: 25px; background: #8d6e63; cursor: nwse-resize; display: none; }
-        .edit-mode .resizer { display: block; }
-        .btn-delete { position: absolute; top: -12px; right: -12px; background: #f44336; color: white; border-radius: 50%; width: 30px; height: 30px; display: none; z-index: 100; font-size: 20px; border: 2px solid white; }
+        /* 編輯模式僅保留刪除與改名 */
+        .btn-delete { position: absolute; top: -10px; right: -10px; background: #f44336; color: white; border-radius: 50%; width: 30px; height: 30px; display: none; z-index: 100; font-size: 20px; border: 2px solid white; }
         .edit-mode .btn-delete { display: block; }
+        .edit-mode .table-id { pointer-events: auto; background: rgba(255,255,255,0.5); }
     </style>
 </head>
 <body>
@@ -72,14 +88,16 @@
 <div id="header">
     <div class="header-top">
         <div style="font-size: 1.3rem; font-weight: bold;">🐶 MISS SHIBA Café</div>
-        <button id="add-btn" style="background:#fff; color:var(--primary-brown); font-weight:bold; display:none;" onclick="createNewTable()">＋新增</button>
+        <button id="add-btn" style="background:#fff; color:var(--primary-brown); font-weight:bold; display:none;" onclick="addNewTable()">＋增設桌位</button>
     </div>
     <div class="stats-bar" id="stats-display">統計中...</div>
 </div>
 
 <div id="controls">
-    <label><input type="checkbox" id="lock-toggle" onchange="toggleLock()"> 🔧編輯模式</label>
-    🔎 <input type="range" min="0.5" max="1.5" step="0.1" value="1" oninput="adjustZoom(this.value)">
+    <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" id="lock-toggle" onchange="toggleLock()"> 🔧配置/改名模式</label>
+    <div style="flex-grow:1; text-align:right;">
+        🔎 <input type="range" min="0.5" max="1.5" step="0.1" value="1" oninput="adjustZoom(this.value)">
+    </div>
 </div>
 
 <div id="floor-plan-container">
@@ -88,7 +106,7 @@
 
 <div id="swap-overlay">
     <div id="swap-menu">
-        <h2 id="swap-title">換桌：從 桌1 換到...</h2>
+        <div id="swap-title" style="font-weight:bold; font-size:1.2rem;">請選取目標桌號</div>
         <div class="swap-grid" id="swap-list"></div>
         <button class="btn-cancel" onclick="closeSwap()">取消</button>
     </div>
@@ -96,25 +114,51 @@
 
 <script>
     const DEFAULT_DURATION = 90 * 60;
-    let isEditMode = false;
     let zoomScale = 1;
-    let sourceTableId = null;
-    let tablesData = JSON.parse(localStorage.getItem('shibaTablesV8')) || [];
+    let sourceId = null;
+    // 使用 V11 版本
+    let tablesData = JSON.parse(localStorage.getItem('shibaTablesV11')) || [];
 
     window.onload = () => {
         if (tablesData.length === 0) {
-            for(let i=1; i<=8; i++) createNewTable(50 + (i-1)*130, 50, `${i}`);
-        } else {
-            tablesData.forEach(data => renderTable(data));
+            // 初始化 8 張桌子 (4x2)
+            for(let i=1; i<=8; i++) {
+                tablesData.push({ id: 't'+Date.now()+i, name: i.toString(), startTime: "", extraTime: 0, isOccupied: false });
+            }
         }
+        renderAllTables();
         setInterval(updateAllTimers, 1000);
-        updateStats();
     };
 
+    function renderAllTables() {
+        const floor = document.getElementById('floor-plan');
+        floor.innerHTML = "";
+        tablesData.forEach(data => {
+            const table = document.createElement('div');
+            table.className = `table ${data.isOccupied ? 'occupied' : ''}`;
+            table.id = data.id;
+            
+            table.innerHTML = `
+                <button class="btn-delete" onclick="deleteTable('${data.id}')">×</button>
+                <input class="table-id" value="${data.name}" onchange="updateName('${data.id}', this.value)" readonly>
+                <div class="timer">--:--</div>
+                <div class="btn-group">
+                    <button class="btn-start" onclick="startTimer('${data.id}')" ${data.isOccupied ? 'disabled' : ''}>開桌</button>
+                    <button class="btn-plus" onclick="addTime('${data.id}')">+15m</button>
+                    <button class="btn-swap" onclick="openSwap('${data.id}')">換桌</button>
+                    <button class="btn-reset" onclick="resetTable('${data.id}')">結帳</button>
+                </div>
+            `;
+            floor.appendChild(table);
+        });
+        updateStats();
+        saveToLocal();
+    }
+
     function toggleLock() {
-        isEditMode = document.getElementById('lock-toggle').checked;
-        document.body.classList.toggle('edit-mode', isEditMode);
-        document.getElementById('add-btn').style.display = isEditMode ? 'block' : 'none';
+        const isEdit = document.getElementById('lock-toggle').checked;
+        document.body.classList.toggle('edit-mode', isEdit);
+        document.getElementById('add-btn').style.display = isEdit ? 'block' : 'none';
     }
 
     function adjustZoom(val) {
@@ -123,141 +167,111 @@
     }
 
     function saveToLocal() {
-        const data = Array.from(document.querySelectorAll('.table')).map(t => ({
-            id: t.id, name: t.querySelector('.table-id').value,
-            left: t.style.left, top: t.style.top,
-            width: t.style.width, height: t.style.height,
-            startTime: t.dataset.startTime || null,
-            extraTime: parseInt(t.dataset.extraTime) || 0,
-            isOccupied: t.classList.contains('occupied')
-        }));
-        localStorage.setItem('shibaTablesV8', JSON.stringify(data));
-        updateStats();
+        localStorage.setItem('shibaTablesV11', JSON.stringify(tablesData));
     }
 
-    function createNewTable(left = 100, top = 100, name = "新") {
-        const data = { id: 't-' + Date.now(), name, left: left + 'px', top: top + 'px', width: '120px', height: '140px', startTime: null, extraTime: 0, isOccupied: false };
-        renderTable(data);
+    function addNewTable() {
+        const nextNum = tablesData.length + 1;
+        tablesData.push({ id: 't'+Date.now(), name: nextNum.toString(), startTime: "", extraTime: 0, isOccupied: false });
+        renderAllTables();
+    }
+
+    function updateName(id, newName) {
+        const table = tablesData.find(t => t.id === id);
+        if(table) table.name = newName;
         saveToLocal();
     }
 
-    function renderTable(data) {
-        const floor = document.getElementById('floor-plan');
-        const table = document.createElement('div');
-        table.className = `table ${data.isOccupied ? 'occupied' : ''}`;
-        table.style.left = data.left; table.style.top = data.top;
-        table.style.width = data.width; table.style.height = data.height;
-        table.id = data.id;
-        table.dataset.startTime = data.startTime || "";
-        table.dataset.extraTime = data.extraTime || 0;
-
-        table.innerHTML = `
-            <button class="btn-delete" onclick="deleteTable('${data.id}')">×</button>
-            <input class="table-id" value="${data.name}" readonly>
-            <div class="timer">--:--</div>
-            <div class="btn-group">
-                <button class="btn-start" onclick="startTimer('${data.id}')" ${data.isOccupied ? 'disabled' : ''}>開桌</button>
-                <button class="btn-plus" onclick="addTime('${data.id}')">+15m</button>
-                <button class="btn-swap" onclick="openSwap('${data.id}')">換桌</button>
-                <button class="btn-reset" onclick="resetTable('${data.id}')">結帳</button>
-            </div>
-            <div class="resizer"></div>
-        `;
-        setupDraggable(table);
-        floor.appendChild(table);
+    function startTimer(id) {
+        const table = tablesData.find(t => t.id === id);
+        if(table) {
+            table.startTime = Date.now();
+            table.isOccupied = true;
+            renderAllTables();
+        }
     }
 
-    // 打開換桌選單
+    function addTime(id) {
+        const table = tablesData.find(t => t.id === id);
+        if(table && table.isOccupied) {
+            table.extraTime += 900;
+            saveToLocal();
+        }
+    }
+
+    function resetTable(id) {
+        if(!confirm("確定結帳？")) return;
+        const table = tablesData.find(t => t.id === id);
+        if(table) {
+            table.startTime = "";
+            table.extraTime = 0;
+            table.isOccupied = false;
+            renderAllTables();
+        }
+    }
+
+    function deleteTable(id) {
+        if(!confirm("刪除此桌？")) return;
+        tablesData = tablesData.filter(t => t.id !== id);
+        renderAllTables();
+    }
+
     function openSwap(id) {
-        sourceTableId = id;
-        const sourceName = document.getElementById(id).querySelector('.table-id').value;
-        document.getElementById('swap-title').innerText = `換桌：從【${sourceName}】換到...`;
-        
+        sourceId = id;
+        const sourceName = tablesData.find(t => t.id === id).name;
+        document.getElementById('swap-title').innerText = `將【${sourceName}】換至...`;
         const list = document.getElementById('swap-list');
         list.innerHTML = "";
-        
-        document.querySelectorAll('.table').forEach(t => {
-            if (t.id === id) return;
-            const name = t.querySelector('.table-id').value;
+        tablesData.forEach(t => {
+            if(t.id === id) return;
             const btn = document.createElement('div');
             btn.className = 'swap-item';
-            btn.innerText = name;
-            btn.onclick = () => executeSwap(t.id);
+            btn.innerText = t.name;
+            btn.onclick = () => {
+                const srcIdx = tablesData.findIndex(x => x.id === sourceId);
+                const tarIdx = tablesData.findIndex(x => x.id === t.id);
+                
+                // 僅對調數據部分
+                const temp = { 
+                    st: tablesData[srcIdx].startTime, 
+                    et: tablesData[srcIdx].extraTime, 
+                    oc: tablesData[srcIdx].isOccupied 
+                };
+                
+                tablesData[srcIdx].startTime = tablesData[tarIdx].startTime;
+                tablesData[srcIdx].extraTime = tablesData[tarIdx].extraTime;
+                tablesData[srcIdx].isOccupied = tablesData[tarIdx].isOccupied;
+                
+                tablesData[tarIdx].startTime = temp.st;
+                tablesData[tarIdx].extraTime = temp.et;
+                tablesData[tarIdx].isOccupied = temp.oc;
+                
+                closeSwap();
+                renderAllTables();
+            };
             list.appendChild(btn);
         });
-
         document.getElementById('swap-overlay').style.display = 'flex';
     }
 
     function closeSwap() {
         document.getElementById('swap-overlay').style.display = 'none';
-        sourceTableId = null;
-    }
-
-    function executeSwap(targetId) {
-        const srcEl = document.getElementById(sourceTableId);
-        const targetEl = document.getElementById(targetId);
-
-        const tempStart = srcEl.dataset.startTime;
-        const tempExtra = srcEl.dataset.extraTime;
-        const tempOccupied = srcEl.classList.contains('occupied');
-
-        // Swap 數據
-        srcEl.dataset.startTime = targetEl.dataset.startTime;
-        srcEl.dataset.extraTime = targetEl.dataset.extraTime;
-        if (targetEl.classList.contains('occupied')) srcEl.classList.add('occupied'); else srcEl.classList.remove('occupied', 'warn', 'urgent', 'over');
-        srcEl.querySelector('.btn-start').disabled = srcEl.classList.contains('occupied');
-
-        targetEl.dataset.startTime = tempStart;
-        targetEl.dataset.extraTime = tempExtra;
-        if (tempOccupied) targetEl.classList.add('occupied'); else targetEl.classList.remove('occupied', 'warn', 'urgent', 'over');
-        targetEl.querySelector('.btn-start').disabled = targetEl.classList.contains('occupied');
-
-        closeSwap();
-        saveToLocal();
-    }
-
-    function startTimer(id) {
-        const el = document.getElementById(id);
-        el.dataset.startTime = Date.now();
-        el.classList.add('occupied');
-        el.querySelector('.btn-start').disabled = true;
-        saveToLocal();
-    }
-
-    function addTime(id) {
-        const el = document.getElementById(id);
-        if (!el.classList.contains('occupied')) return;
-        el.dataset.extraTime = (parseInt(el.dataset.extraTime) || 0) + 900;
-        saveToLocal();
-    }
-
-    function resetTable(id) {
-        if (!confirm("確定結帳？")) return;
-        const el = document.getElementById(id);
-        el.classList.remove('occupied', 'warn', 'urgent', 'over');
-        el.dataset.startTime = ""; el.dataset.extraTime = 0;
-        el.querySelector('.timer').innerText = "--:--";
-        el.querySelector('.btn-start').disabled = false;
-        saveToLocal();
-    }
-
-    function deleteTable(id) {
-        if (confirm("刪除此桌位？")) { document.getElementById(id).remove(); saveToLocal(); }
+        sourceId = null;
     }
 
     function updateStats() {
-        const total = document.querySelectorAll('.table').length;
-        const occupied = document.querySelectorAll('.table.occupied').length;
-        document.getElementById('stats-display').innerText = `滿席: ${occupied} / 空桌: ${total - occupied}`;
+        const occupied = tablesData.filter(t => t.isOccupied).length;
+        document.getElementById('stats-display').innerText = `目前：${occupied} 席滿座 / ${tablesData.length - occupied} 席空位`;
     }
 
     function updateAllTimers() {
-        document.querySelectorAll('.table.occupied').forEach(el => {
-            const start = parseInt(el.dataset.startTime);
-            const extra = parseInt(el.dataset.extraTime) || 0;
-            const timeLeft = (DEFAULT_DURATION + extra) - Math.floor((Date.now() - start) / 1000);
+        tablesData.forEach(data => {
+            if(!data.isOccupied) return;
+            const el = document.getElementById(data.id);
+            if(!el) return;
+            const timeLeft = (DEFAULT_DURATION + data.extraTime) - Math.floor((Date.now() - data.startTime) / 1000);
             const timerDisplay = el.querySelector('.timer');
+            
             el.classList.remove('warn', 'urgent', 'over');
             if (timeLeft <= 0) {
                 timerDisplay.innerText = "超時"; el.classList.add('over');
@@ -268,39 +282,6 @@
                 else if (timeLeft <= 900) el.classList.add('warn');
             }
         });
-    }
-
-    function setupDraggable(el) {
-        let isDragging = false, isResizing = false;
-        let startX, startY, startW, startH, offset = { x: 0, y: 0 };
-        const start = (e) => {
-            const t = e.type.includes('touch') ? e.touches[0] : e;
-            if (e.target.className === 'resizer') {
-                isResizing = true; startX = t.clientX; startY = t.clientY;
-                startW = parseInt(el.style.width); startH = parseInt(el.style.height);
-                e.preventDefault();
-            } else if (isEditMode && e.target.tagName !== 'BUTTON') {
-                isDragging = true;
-                offset.x = (t.clientX / zoomScale) - el.offsetLeft;
-                offset.y = (t.clientY / zoomScale) - el.offsetTop;
-                el.style.zIndex = 100;
-            }
-        };
-        const move = (e) => {
-            const t = e.type.includes('touch') ? e.touches[0] : e;
-            if (isResizing) {
-                el.style.width = startW + (t.clientX - startX) / zoomScale + 'px';
-                el.style.height = startH + (t.clientY - startY) / zoomScale + 'px';
-            } else if (isDragging) {
-                el.style.left = 20 * Math.round(((t.clientX/zoomScale)-offset.x)/20) + 'px';
-                el.style.top = 20 * Math.round(((t.clientY/zoomScale)-offset.y)/20) + 'px';
-                e.preventDefault();
-            }
-        };
-        const end = () => { if (isDragging || isResizing) { isDragging = false; isResizing = false; saveToLocal(); } };
-        el.addEventListener('mousedown', start); el.addEventListener('touchstart', start, {passive: false});
-        document.addEventListener('mousemove', move); document.addEventListener('touchmove', move, { passive: false });
-        document.addEventListener('mouseup', end); document.addEventListener('touchend', end);
     }
 </script>
 </body>
