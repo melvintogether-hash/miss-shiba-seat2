@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>MISS SHIBA Café - 佈局優化版</title>
+    <title>MISS SHIBA Café - 開桌時間強化版</title>
     <style>
         :root {
             --bg-color: #f8f4f0;
@@ -14,10 +14,11 @@
             --status-warn: #fff9c4;
             --status-urgent: #ffccbc;
             --status-over: #ef9a9a;
+            --time-blue: #e3f2fd; /* 開桌時間的背景色 */
             --table-w: 160px;
-            --table-h: 210px; /* 稍微增加高度，確保結帳按鈕不被遮擋 */
-            --gap-x: 15px;    /* 左右間距 */
-            --gap-y: 45px;    /* 上下行間距：解決您提到的太靠近問題 */
+            --table-h: 240px; /* 再次調高以容納新數據 */
+            --gap-x: 15px;
+            --gap-y: 40px;
         }
         body { font-family: -apple-system, sans-serif; background-color: var(--bg-color); margin: 0; overflow: hidden; touch-action: none; }
         #header { background: var(--primary-brown); color: white; padding: 12px 15px; z-index: 1000; position: relative; }
@@ -32,7 +33,7 @@
             display: grid;
             grid-template-columns: repeat(4, var(--table-w));
             grid-column-gap: var(--gap-x);
-            grid-row-gap: var(--gap-y); /* 核心修正：拉開排與排的距離 */
+            grid-row-gap: var(--gap-y);
             width: fit-content;
             transform-origin: 0 0;
         }
@@ -41,7 +42,7 @@
             background: var(--table-free); 
             border: 3px solid #8d6e63; border-radius: 12px; 
             display: flex; flex-direction: column; align-items: center; justify-content: space-between; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1); padding: 12px 0;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); padding: 10px 0;
             width: var(--table-w); height: var(--table-h);
             position: relative;
             box-sizing: border-box;
@@ -50,14 +51,27 @@
         .warn { background: var(--status-warn); border-color: #fbc02d; }
         .urgent { background: var(--status-urgent); border-color: #ff5722; }
         .over { background: var(--status-over); border-color: #d32f2f; animation: pulse 1s infinite; }
+        
+        /* 新增：開桌時刻樣式 */
+        .start-moment {
+            font-size: 0.85rem;
+            background: var(--time-blue);
+            color: #1565c0;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: bold;
+            margin-top: 2px;
+            display: none; /* 預設不顯示，開桌後顯示 */
+        }
+        .occupied .start-moment { display: block; }
+
         @keyframes pulse { 0% { box-shadow: 0 0 0 0px rgba(211,47,47,0.4); } 70% { box-shadow: 0 0 0 10px rgba(211,47,47,0); } 100% { box-shadow: 0 0 0 0px rgba(211,47,47,0); } }
 
         .table-id { font-weight: bold; font-size: 1.3rem; border: none; background: transparent; text-align: center; width: 90%; color: #3e2723; pointer-events: none; }
-        .timer { font-family: monospace; font-size: 1.5rem; font-weight: bold; margin: 5px 0; color: #333; }
+        .timer { font-family: monospace; font-size: 1.5rem; font-weight: bold; margin: 2px 0; color: #333; }
         
         .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; width: 92%; }
-        button { padding: 10px 2px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: bold; transition: opacity 0.2s; }
-        button:active { opacity: 0.7; }
+        button { padding: 10px 2px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: bold; }
         .btn-start { background: #4caf50; color: white; grid-column: span 2; font-size: 15px; padding: 12px 0; }
         .btn-start:disabled { background: #ccc; color: #666; }
         .btn-plus { background: #ff9800; color: white; }
@@ -70,13 +84,10 @@
             background: rgba(0,0,0,0.85); z-index: 9999;
             display: none; flex-direction: column; align-items: center; justify-content: center;
         }
-        #swap-menu {
-            background: white; width: 88%; max-width: 420px; border-radius: 24px;
-            padding: 25px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
+        #swap-menu { background: white; width: 88%; max-width: 420px; border-radius: 24px; padding: 25px; text-align: center; }
         .swap-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; max-height: 50vh; overflow-y: auto; }
-        .swap-item { padding: 18px; background: #f5f5f5; border-radius: 12px; font-size: 1.2rem; font-weight: bold; border: 1px solid #ddd; }
-        .btn-cancel { margin-top: 20px; background: #eee; width: 100%; padding: 15px; border-radius: 12px; font-weight: bold; color: #666; }
+        .swap-item { padding: 18px; background: #f5f5f5; border-radius: 12px; font-size: 1.2rem; font-weight: bold; }
+        .btn-cancel { margin-top: 20px; background: #eee; width: 100%; padding: 15px; border-radius: 12px; }
 
         .btn-delete { position: absolute; top: -10px; right: -10px; background: #f44336; color: white; border-radius: 50%; width: 30px; height: 30px; display: none; z-index: 100; font-size: 20px; border: 2px solid white; line-height: 26px; }
         .edit-mode .btn-delete { display: block; }
@@ -94,7 +105,7 @@
 </div>
 
 <div id="controls">
-    <label style="display:flex; align-items:center; gap:8px; font-weight:bold; color:#5d4037;"><input type="checkbox" id="lock-toggle" style="width:18px; height:18px;" onchange="toggleLock()"> 🔧配置模式</label>
+    <label style="display:flex; align-items:center; gap:8px; font-weight:bold;"><input type="checkbox" id="lock-toggle" onchange="toggleLock()"> 🔧配置模式</label>
     <div style="flex-grow:1; text-align:right;">
         🔎 <input type="range" min="0.4" max="1.4" step="0.1" value="1" style="width:100px;" oninput="adjustZoom(this.value)">
     </div>
@@ -116,12 +127,13 @@
     const DEFAULT_DURATION = 90 * 60;
     let zoomScale = 1;
     let sourceId = null;
-    let tablesData = JSON.parse(localStorage.getItem('shibaTablesV12')) || [];
+    // 使用 V13 版本
+    let tablesData = JSON.parse(localStorage.getItem('shibaTablesV13')) || [];
 
     window.onload = () => {
         if (tablesData.length === 0) {
             for(let i=1; i<=8; i++) {
-                tablesData.push({ id: 't'+Date.now()+i, name: i.toString(), startTime: "", extraTime: 0, isOccupied: false });
+                tablesData.push({ id: 't'+Date.now()+i, name: i.toString(), startTime: "", startTimeStr: "", extraTime: 0, isOccupied: false });
             }
         }
         renderAllTables();
@@ -139,6 +151,7 @@
             table.innerHTML = `
                 <button class="btn-delete" onclick="deleteTable('${data.id}')">×</button>
                 <input class="table-id" value="${data.name}" onchange="updateName('${data.id}', this.value)" readonly>
+                <div class="start-moment">🔵 開桌 ${data.startTimeStr || ''}</div>
                 <div class="timer">--:--</div>
                 <div class="btn-group">
                     <button class="btn-start" onclick="startTimer('${data.id}')" ${data.isOccupied ? 'disabled' : ''}>開桌</button>
@@ -165,12 +178,12 @@
     }
 
     function saveToLocal() {
-        localStorage.setItem('shibaTablesV12', JSON.stringify(tablesData));
+        localStorage.setItem('shibaTablesV13', JSON.stringify(tablesData));
     }
 
     function addNewTable() {
         const nextNum = tablesData.length + 1;
-        tablesData.push({ id: 't'+Date.now(), name: nextNum.toString(), startTime: "", extraTime: 0, isOccupied: false });
+        tablesData.push({ id: 't'+Date.now(), name: nextNum.toString(), startTime: "", startTimeStr: "", extraTime: 0, isOccupied: false });
         renderAllTables();
     }
 
@@ -183,7 +196,9 @@
     function startTimer(id) {
         const table = tablesData.find(t => t.id === id);
         if(table) {
+            const now = new Date();
             table.startTime = Date.now();
+            table.startTimeStr = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
             table.isOccupied = true;
             renderAllTables();
         }
@@ -202,6 +217,7 @@
         const table = tablesData.find(t => t.id === id);
         if(table) {
             table.startTime = "";
+            table.startTimeStr = "";
             table.extraTime = 0;
             table.isOccupied = false;
             renderAllTables();
@@ -228,13 +244,25 @@
             btn.onclick = () => {
                 const srcIdx = tablesData.findIndex(x => x.id === sourceId);
                 const tarIdx = tablesData.findIndex(x => x.id === t.id);
-                const temp = { st: tablesData[srcIdx].startTime, et: tablesData[srcIdx].extraTime, oc: tablesData[srcIdx].isOccupied };
+                
+                // 完全對調所有營業數據
+                const temp = { 
+                    st: tablesData[srcIdx].startTime, 
+                    sts: tablesData[srcIdx].startTimeStr,
+                    et: tablesData[srcIdx].extraTime, 
+                    oc: tablesData[srcIdx].isOccupied 
+                };
+                
                 tablesData[srcIdx].startTime = tablesData[tarIdx].startTime;
+                tablesData[srcIdx].startTimeStr = tablesData[tarIdx].startTimeStr;
                 tablesData[srcIdx].extraTime = tablesData[tarIdx].extraTime;
                 tablesData[srcIdx].isOccupied = tablesData[tarIdx].isOccupied;
+                
                 tablesData[tarIdx].startTime = temp.st;
+                tablesData[tarIdx].startTimeStr = temp.sts;
                 tablesData[tarIdx].extraTime = temp.et;
                 tablesData[tarIdx].isOccupied = temp.oc;
+                
                 closeSwap();
                 renderAllTables();
             };
